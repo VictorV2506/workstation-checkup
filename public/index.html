@@ -25,6 +25,9 @@
     <!-- Core -->
     <script src="js/core/state.js"></script>
     <script src="js/core/auth.js"></script>
+
+    <!-- Data -->
+    <script src="js/data/data-loader.js"></script>
     
     <!-- Chart.js for Dashboard -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -213,50 +216,6 @@
 
 
 
-
-        // Load Floor Data
-        async function loadFloorData() {
-            try {
-                const response = await fetch('floors_data.json');
-                if (!response.ok) {
-                    throw new Error('Failed to load floors_data.json');
-                }
-                floorConfigs = await response.json();
-                
-                console.log('✅ Loaded floors:', floorConfigs.length);
-                
-                const buildings = [...new Set(floorConfigs.map(f => f.building))].sort();
-                const buildingSelect = document.getElementById('buildingSelect');
-                buildingSelect.innerHTML = '<option value="">Select Building</option>';
-                buildings.forEach(building => {
-                    const option = document.createElement('option');
-                    option.value = building;
-                    option.textContent = `Building ${building}`;
-                    buildingSelect.appendChild(option);
-                });
-
-                loadDesksData();
-            } catch (error) {
-                console.error('Error loading floors:', error);
-                alert('Error: ' + error.message + '\n\nMake sure floors_data.json is in the same directory');
-            }
-        }
-
-        // Load Desks Data
-        async function loadDesksData() {
-            try {
-                const snapshot = await db.collection('desks').get();
-                desksData = {};
-                snapshot.docs.forEach(doc => {
-                    desksData[doc.id] = doc.data();
-                });
-                console.log('✅ Loaded desk data:', Object.keys(desksData).length);
-                updateStats();
-                updateDashboard();
-            } catch (error) {
-                console.error('Error loading desks:', error);
-            }
-        }
 
         // Building Selection
         function onBuildingChange() {
