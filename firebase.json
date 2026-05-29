@@ -1,0 +1,24 @@
+{
+  "firestore": {
+    "database": "(default)",
+    "location": "europe-west10",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  },
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Workstation Checkup",
+        "supportEmail": "eitops-de@takeaway.com"
+      }
+    }
+  }
+}

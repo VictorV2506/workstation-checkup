@@ -1,0 +1,28 @@
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
+
+# Environment — never commit secrets
+.env
+.env.local
+.env.*.local
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (not used now, but safe to include)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
