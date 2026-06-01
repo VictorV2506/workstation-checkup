@@ -438,7 +438,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 45px;
+    font-size: 95px;
     font-weight: 700;
     color: white;
     box-shadow: var(--shadow-md);
@@ -473,6 +473,22 @@ body {
 .desk-marker.dimmed {
     opacity: 0.3;
 }
+
+.room-marker--MeetingRoom {
+    background: #8B5CF6;   /* purple — adjust to your preference */
+}
+
+.room-marker--ServerRoom {
+    background: #EF4444;   /* red */
+}
+
+.room-marker--MeetingRoom:hover,
+.room-marker--ServerRoom:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow: var(--shadow-xl);
+    z-index: 100;
+}
+
 
 @keyframes pulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7); }

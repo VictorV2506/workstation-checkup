@@ -32,6 +32,9 @@
     <!-- Features -->
     <script src="js/features/floor-selector.js"></script>
     <script src="js/features/zoom.js"></script>
+    <script src="js/features/stats.js"></script>
+    <script src="js/features/filters.js"></script>
+    <script src="js/features/floor-renderer.js"></script>
     
     <!-- Chart.js for Dashboard -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -220,55 +223,6 @@
 
 
 
-
-        // Render Floor Plan
-        function renderFloorPlan() {
-            document.getElementById('floorLoading').style.display = 'none';
-            const floorPlan = document.getElementById('floorPlan');
-            floorPlan.innerHTML = '';
-            
-            // Reset zoom
-            currentZoom = 1;
-            
-            // Set floor plan size (fit to container width)
-            const container = document.getElementById('floorViewer');
-            const containerWidth = container.offsetWidth;
-            const scale = containerWidth / currentFloor.width;
-            
-            floorPlan.style.width = currentFloor.width + 'px';
-            floorPlan.style.height = currentFloor.height + 'px';
-            floorPlan.style.backgroundImage = `url('${currentFloor.image_path}')`;
-            
-            // Apply initial scale to fit
-            currentZoom = scale * 0.9; // Slightly smaller to add padding
-            applyZoom();
-
-            currentFloor.desks.forEach(desk => {
-                const marker = document.createElement('div');
-                marker.className = 'desk-marker';
-                marker.style.left = desk.x + 'px';
-                marker.style.top = desk.y + 'px';
-                marker.dataset.deskId = desk.id;
-
-                const deskData = desksData[desk.id];
-                if (deskData) {
-                    if (deskData.status === 'inspected') marker.classList.add('inspected');
-                    if (deskData.status === 'issue') marker.classList.add('issue');
-                }
-
-                const label = document.createElement('div');
-                label.className = 'desk-label';
-                label.textContent = desk.number || desk.id;
-                marker.appendChild(label);
-
-                marker.addEventListener('click', (e) => handleDeskClick(e, desk.id));
-                floorPlan.appendChild(marker);
-            });
-
-            setupDragSelection();
-            applyCurrentFilter();
-            updateStats();
-        }
 
         // Desk Click Handler
         function handleDeskClick(e, deskId) {
@@ -461,64 +415,9 @@
         }
 
         // Filtering
-        function filterDesks(filterType) {
-            currentFilter = filterType;
-            
-            document.querySelectorAll('.stat-item').forEach(item => {
-                item.classList.remove('active-filter');
-            });
-            document.querySelector(`[data-filter="${filterType}"]`)?.classList.add('active-filter');
-            
-            applyCurrentFilter();
-        }
-
-        function applyCurrentFilter() {
-            const markers = document.querySelectorAll('.desk-marker');
-            
-            markers.forEach(marker => {
-                marker.classList.remove('highlighted', 'dimmed');
-                const deskId = marker.dataset.deskId;
-                const deskData = desksData[deskId];
-                
-                let shouldHighlight = false;
-                
-                switch(currentFilter) {
-                    case 'all':
-                        shouldHighlight = true;
-                        break;
-                    case 'inspected':
-                        shouldHighlight = deskData?.status === 'inspected';
-                        break;
-                    case 'issue':
-                        shouldHighlight = deskData?.status === 'issue';
-                        break;
-                    case 'pending':
-                        shouldHighlight = !deskData?.status || deskData.status === 'pending';
-                        break;
-                }
-                
-                if (shouldHighlight) {
-                    marker.classList.add('highlighted');
-                } else {
-                    marker.classList.add('dimmed');
-                }
-            });
-        }
+        
 
         // Stats Update
-        function updateStats() {
-            if (!currentFloor) return;
-            
-            const total = currentFloor.desks.length;
-            const inspected = currentFloor.desks.filter(d => desksData[d.id]?.status === 'inspected').length;
-            const issues = currentFloor.desks.filter(d => desksData[d.id]?.status === 'issue').length;
-            const completion = total > 0 ? Math.round((inspected / total) * 100) : 0;
-            
-            document.getElementById('totalDesks').textContent = total;
-            document.getElementById('inspectedDesks').textContent = inspected;
-            document.getElementById('issueDesks').textContent = issues;
-            document.getElementById('completionRate').textContent = completion + '%';
-        }
 
         // Dashboard
         function updateDashboard() {
