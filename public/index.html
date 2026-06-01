@@ -28,6 +28,10 @@
 
     <!-- Data -->
     <script src="js/data/data-loader.js"></script>
+
+    <!-- Features -->
+    <script src="js/features/floor-selector.js"></script>
+    <script src="js/features/zoom.js"></script>
     
     <!-- Chart.js for Dashboard -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -216,72 +220,6 @@
 
 
 
-
-        // Building Selection
-        function onBuildingChange() {
-            const building = document.getElementById('buildingSelect').value;
-            const floorSelect = document.getElementById('floorSelect');
-            floorSelect.innerHTML = '<option value="">Select Floor</option>';
-            
-            if (building) {
-                const floors = floorConfigs.filter(f => f.building === building).sort((a, b) => a.floor - b.floor);
-                floors.forEach(floor => {
-                    const option = document.createElement('option');
-                    option.value = floor.id;
-                    option.textContent = `Floor ${floor.floor}`;
-                    floorSelect.appendChild(option);
-                });
-            }
-            
-            document.getElementById('floorLoading').style.display = 'flex';
-            document.getElementById('floorPlan').innerHTML = '';
-        }
-
-        function onFloorChange() {
-            const floorId = document.getElementById('floorSelect').value;
-            if (!floorId) {
-                document.getElementById('floorLoading').style.display = 'flex';
-                document.getElementById('floorPlan').innerHTML = '';
-                return;
-            }
-            
-            currentFloor = floorConfigs.find(f => f.id === floorId);
-            if (currentFloor) {
-                console.log('✅ Selected floor:', currentFloor.id);
-                renderFloorPlan();
-            }
-        }
-
-        // Zoom Functions
-        function zoomIn() {
-            if (currentZoom < MAX_ZOOM) {
-                currentZoom = Math.min(currentZoom + ZOOM_STEP, MAX_ZOOM);
-                applyZoom();
-            }
-        }
-
-        function zoomOut() {
-            if (currentZoom > MIN_ZOOM) {
-                currentZoom = Math.max(currentZoom - ZOOM_STEP, MIN_ZOOM);
-                applyZoom();
-            }
-        }
-
-        function zoomReset() {
-            currentZoom = 1;
-            applyZoom();
-            
-            // Center the floor plan
-            const viewer = document.getElementById('floorViewer');
-            const plan = document.getElementById('floorPlan');
-            viewer.scrollLeft = (plan.offsetWidth - viewer.offsetWidth) / 2;
-            viewer.scrollTop = (plan.offsetHeight - viewer.offsetHeight) / 2;
-        }
-
-        function applyZoom() {
-            const plan = document.getElementById('floorPlan');
-            plan.style.transform = `scale(${currentZoom})`;
-        }
 
         // Render Floor Plan
         function renderFloorPlan() {
