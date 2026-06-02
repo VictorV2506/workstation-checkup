@@ -474,22 +474,6 @@ body {
     opacity: 0.3;
 }
 
-.room-marker--MeetingRoom {
-    background: #8B5CF6;   /* purple — adjust to your preference */
-}
-
-.room-marker--ServerRoom {
-    background: #EF4444;   /* red */
-}
-
-.room-marker--MeetingRoom:hover,
-.room-marker--ServerRoom:hover {
-    transform: translate(-50%, -50%) scale(1.1);
-    box-shadow: var(--shadow-xl);
-    z-index: 100;
-}
-
-
 @keyframes pulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7); }
     50% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
@@ -999,3 +983,70 @@ body.bulk-edit-active {
     font-weight: 600;
     color: #ff6b35;
 }
+
+
+/* ================================================================
+   SESSION 16: TYPE-BASED STAT CARDS & MARKERS
+   ================================================================ */
+
+.stats { display: flex; gap: 1rem; margin: 24px; flex-wrap: wrap; }
+
+.stat-card-main {
+    background: white; border-radius: 12px; padding: 1.25rem 1.5rem 1rem;
+    flex: 1; min-width: 160px; cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    transition: box-shadow 0.15s, border-color 0.15s, background-color 0.15s;
+    border: 2px solid transparent; user-select: none;
+}
+.stat-card-main:hover        { box-shadow: 0 2px 8px rgba(102,126,234,0.2); }
+.stat-card-main.active-filter { border-color: #667eea; background: #f5f7ff; }
+
+.stat-card-completion {
+    background: white; border-radius: 12px; padding: 1.25rem 1.5rem 1rem;
+    min-width: 120px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.stat-main-value  { font-size: 2.5rem; font-weight: 700; color: #667eea; line-height: 1; }
+.stat-main-label  { font-size: 0.65rem; font-weight: 600; color: #6b7280; letter-spacing: 0.08em; margin-top: 0.25rem; margin-bottom: 0.75rem; text-transform: uppercase; }
+.stat-sub-row     { display: flex; gap: 0.5rem; }
+.stat-card-sub    { background: #f9fafb; border-radius: 8px; padding: 0.4rem 0.6rem; flex: 1; text-align: center; }
+.stat-sub-value   { font-size: 1rem; font-weight: 600; color: #374151; }
+.stat-sub-label   { font-size: 0.6rem; color: #9ca3af; letter-spacing: 0.04em; text-transform: uppercase; }
+
+.meeting-marker {
+    position: absolute; background: #8b5cf6; border: 3px solid white; border-radius: 50%;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: white; box-shadow: var(--shadow-md);
+    transform: translate(-50%, -50%); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.server-marker {
+    position: absolute; background: #f59e0b; border: 3px solid white; border-radius: 50%;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: white; box-shadow: var(--shadow-md);
+    transform: translate(-50%, -50%); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.amenity-marker {
+    position: absolute; width: 35px; height: 35px; background: #d1d5db;
+    border: 2px solid #9ca3af; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; color: #6b7280;
+    transform: translate(-50%, -50%); opacity: 0.6; pointer-events: none;
+}
+
+.meeting-marker:hover, .server-marker:hover {
+    transform: translate(-50%, -50%) scale(1.3); box-shadow: var(--shadow-xl); z-index: 100;
+}
+
+.desk-marker.inspected, .meeting-marker.inspected, .server-marker.inspected { background: var(--success); }
+.desk-marker.issue,     .meeting-marker.issue,     .server-marker.issue     { background: var(--error); }
+
+.desk-marker.selected, .meeting-marker.selected, .server-marker.selected {
+    border-color: var(--warning); border-width: 4px;
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.4);
+}
+
+.desk-marker.highlighted, .meeting-marker.highlighted, .server-marker.highlighted { animation: pulse 1.5s infinite; }
+.desk-marker.dimmed,      .meeting-marker.dimmed,      .server-marker.dimmed      { opacity: 0.3; }

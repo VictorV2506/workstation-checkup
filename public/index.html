@@ -120,21 +120,33 @@
 
             <!-- Stats -->
             <div class="stats">
-                <div class="stat-item" onclick="filterDesks('all')" data-filter="all">
-                    <div class="stat-value" id="totalDesks">0</div>
-                    <div class="stat-label">Total Desks</div>
+                <div class="stat-card-main" data-type="Desk" onclick="filterByType('Desk')">
+                    <div class="stat-main-value" id="deskTotal">0</div>
+                    <div class="stat-main-label">DESKS</div>
+                    <div class="stat-sub-row">
+                        <div class="stat-card-sub"><div class="stat-sub-value" id="deskIssues">0</div><div class="stat-sub-label">Issues</div></div>
+                        <div class="stat-card-sub"><div class="stat-sub-value" id="deskProgress">0%</div><div class="stat-sub-label">Progress</div></div>
+                    </div>
                 </div>
-                <div class="stat-item" onclick="filterDesks('inspected')" data-filter="inspected">
-                    <div class="stat-value" id="inspectedDesks">0</div>
-                    <div class="stat-label">Inspected</div>
+                <div class="stat-card-main" data-type="MeetingRoom" onclick="filterByType('MeetingRoom')">
+                    <div class="stat-main-value" id="meetingTotal">0</div>
+                    <div class="stat-main-label">MEETING ROOMS</div>
+                    <div class="stat-sub-row">
+                        <div class="stat-card-sub"><div class="stat-sub-value" id="meetingIssues">0</div><div class="stat-sub-label">Issues</div></div>
+                        <div class="stat-card-sub"><div class="stat-sub-value" id="meetingProgress">0%</div><div class="stat-sub-label">Progress</div></div>
+                    </div>
                 </div>
-                <div class="stat-item" onclick="filterDesks('issue')" data-filter="issue">
-                    <div class="stat-value" id="issueDesks">0</div>
-                    <div class="stat-label">Issues Found</div>
+                <div class="stat-card-main" data-type="ServerRoom" onclick="filterByType('ServerRoom')">
+                    <div class="stat-main-value" id="serverTotal">0</div>
+                    <div class="stat-main-label">SERVER ROOMS</div>
+                    <div class="stat-sub-row">
+                        <div class="stat-card-sub"><div class="stat-sub-value" id="serverIssues">0</div><div class="stat-sub-label">Issues</div></div>
+                        <div class="stat-card-sub"><div class="stat-sub-value" id="serverProgress">0%</div><div class="stat-sub-label">Progress</div></div>
+                    </div>
                 </div>
-                <div class="stat-item" onclick="filterDesks('pending')" data-filter="pending">
-                    <div class="stat-value" id="completionRate">0%</div>
-                    <div class="stat-label">Completion</div>
+                <div class="stat-card-completion">
+                    <div class="stat-main-value" id="completionRate">0%</div>
+                    <div class="stat-main-label">COMPLETION</div>
                 </div>
             </div>
 
