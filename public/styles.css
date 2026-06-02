@@ -239,7 +239,7 @@ body {
 }
 
 .controls label {
-    font-size: 14px;
+    font-size: 20px;
     font-weight: 600;
     color: var(--gray-700);
     display: flex;
@@ -429,8 +429,8 @@ body {
 /* Desk Markers */
 .desk-marker {
     position: absolute;
-    width: 155px;
-    height: 155px;
+    width: 35px;
+    height: 35px;
     background: var(--primary);
     border: 3px solid white;
     border-radius: 50%;
@@ -438,7 +438,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 95px;
+    font-size: 25px;
     font-weight: 700;
     color: white;
     box-shadow: var(--shadow-md);

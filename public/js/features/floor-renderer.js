@@ -30,11 +30,11 @@
 // Default 0.05 is a starting point — tune up/down if markers
 // appear too large or too small after first deploy.
 const ROOM_SCALE_FACTOR = 0.05;
-const ROOM_SIZE_MIN     = 155;   // never smaller than a desk marker
-const ROOM_SIZE_MAX     = 500;   // cap for very large rooms
+const ROOM_SIZE_MIN     = 35;   // never smaller than a desk marker
+const ROOM_SIZE_MAX     = 150;   // cap for very large rooms
 
 function calculateRoomSize(item) {
-    if (!item.coordinates || !item.coordinates[0]) return 230;
+    if (!item.coordinates || !item.coordinates[0]) return 35;
 
     const ring = item.coordinates[0];
     let area = 0;
