@@ -7,6 +7,26 @@
         let buildingChart = null;
         let statusChart = null;
 
+        function updateDashboard() {
+            let total = 0, inspected = 0, issues = 0;
+            
+            floorConfigs.forEach(floor => {
+                total += floor.desks.length;
+                inspected += floor.desks.filter(d => desksData[d.id]?.status === 'inspected').length;
+                issues += floor.desks.filter(d => desksData[d.id]?.status === 'issue').length;
+            });
+            
+            const completion = total > 0 ? Math.round((inspected / total) * 100) : 0;
+            
+            document.getElementById('dashTotalDesks').textContent = total;
+            document.getElementById('dashInspected').textContent = inspected;
+            document.getElementById('dashIssues').textContent = issues;
+            document.getElementById('dashCompletion').textContent = completion + '%';
+            
+            renderCharts();
+            renderFloorBreakdown();
+        }
+
         function renderCharts() {
             const buildingData = {};
             floorConfigs.forEach(floor => {
