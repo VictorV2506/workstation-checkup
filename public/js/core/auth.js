@@ -17,24 +17,34 @@
 
 // ── Auth state listener ───────────────────────────────────────
 // Runs once on page load and on every sign-in / sign-out event.
-auth.onAuthStateChanged(user => {
+// All getElementById calls are null-guarded: onAuthStateChanged fires
+// during intermediate OAuth states when elements may not exist yet.
+auth.onAuthStateChanged(function(user) {
+    var loginScreen  = document.getElementById('loginScreen');
+    var appContainer = document.getElementById('appContainer');
+    var userNameEl   = document.getElementById('userName');
+    var userPhotoEl  = document.getElementById('userPhoto');
+
     if (user) {
         currentUser = user;
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('appContainer').style.display = 'block';
-        document.getElementById('userName').textContent = user.displayName;
-        document.getElementById('userPhoto').src = user.photoURL;
+        if (loginScreen)  { loginScreen.style.display  = 'none'; }
+        if (appContainer) { appContainer.style.display = 'block'; }
+        if (userNameEl)   { userNameEl.textContent      = user.displayName || ''; }
+        if (userPhotoEl)  { userPhotoEl.src             = user.photoURL    || ''; }
         loadFloorData();
     } else {
-        document.getElementById('loginScreen').style.display = 'flex';
-        document.getElementById('appContainer').style.display = 'none';
+        currentUser = null;
+        if (loginScreen)  { loginScreen.style.display  = 'flex'; }
+        if (appContainer) { appContainer.style.display = 'none'; }
     }
 });
 
 // ── Sign in ───────────────────────────────────────────────────
+// Uses signInWithPopup. The Cross-Origin-Opener-Policy warnings in the
+// console are cosmetic — they do not prevent auth from completing.
 function signInWithGoogle() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).catch(error => {
+    var provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(function(error) {
         alert('Login failed: ' + error.message);
     });
 }

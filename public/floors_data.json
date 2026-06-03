@@ -485,35 +485,35 @@
       {
         "id": "a9f11485-c6c5-4741-8cd8-c6e2b8b1d218",
         "number": "BERA_6_21",
-        "type": "Room",
+        "type": "Desk",
         "x": 1626.1,
         "y": 601.8
       },
       {
         "id": "665518bf-97b3-423d-a62c-b667bdc54ad8",
         "number": "BERA_6_23",
-        "type": "Room",
+        "type": "Desk",
         "x": 1600.26,
         "y": 669.08
       },
       {
         "id": "1ecd1fa9-d19d-4376-b933-0e206af5f493",
         "number": "MR Cupcake",
-        "type": "Room",
+        "type": "MeetingRoom",
         "x": 1265.97,
         "y": 732.43
       },
       {
         "id": "714264b7-e069-41a7-9162-a3a56f3aa75d",
         "number": "🐶 BERA_6_20",
-        "type": "Room",
+        "type": "Desk",
         "x": 1829.65,
         "y": 607.79
       },
       {
         "id": "9bcd4b7d-a221-4a55-8233-b6c4b01cc81c",
         "number": "🐶 BERA_6_22",
-        "type": "Room",
+        "type": "Desk",
         "x": 1600.33,
         "y": 604.36
       }

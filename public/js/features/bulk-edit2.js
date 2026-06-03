@@ -238,7 +238,7 @@
                     <h3>&#128221; Status &amp; Notes</h3>
                     <div class="form-group">
                         <label>Status</label>
-                        <select id="bulkStatus" onchange="onBulkStatusChange(this.value)">
+                        <select id="bulkStatus">
                             <option value="">-- No Change --</option>
                             <option value="pending">Pending</option>
                             <option value="inspected">&#9989; OK - No Issues</option>
@@ -268,25 +268,6 @@
             if (hint && hint.classList.contains('bulk-check-hint')) {
                 hint.style.display = enabled ? 'none' : '';
             }
-        }
-
-        // Auto-check mandatory items when OK status is selected in bulk mode
-        function onBulkStatusChange(status) {
-            if (status !== 'inspected') { return; }
-            
-            // Enable the "Apply to all" toggle so checkboxes become active
-            var applyToggle = document.getElementById('bulkApplyChecks');
-            if (applyToggle && !applyToggle.checked) {
-                applyToggle.checked = true;
-                toggleBulkCheckboxes(true);
-            }
-            
-            // Auto-check mandatory items (not Mouse/Keyboard — those are optional)
-            var mandatoryBulk = ['bulkCheckPower', 'bulkCheckLAN', 'bulkCheckMon1', 'bulkCheckMon2', 'bulkCheckTBT', 'bulkCheckDocking'];
-            mandatoryBulk.forEach(function(id) {
-                var el = document.getElementById(id);
-                if (el) { el.checked = true; }
-            });
         }
 
         // Save All (bulk context)

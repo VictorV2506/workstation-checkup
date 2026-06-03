@@ -4,15 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Workstation Checkup - BER Office</title>
-    
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
     <!-- External CSS -->
     <link rel="stylesheet" href="styles.css">
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -40,15 +43,31 @@
     <script src="js/features/map-interactions.js"></script>
     <script src="js/features/bulk-edit.js"></script>
     <script src="js/features/floor-renderer.js"></script>
-    
+
     <!-- Chart.js for Dashboard -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
+
     <!-- Login Screen -->
     <div class="login-screen" id="loginScreen">
         <div class="login-card">
-            <h1>🏢 Workstation Checkup</h1>
+            <div class="login-logo">
+                <svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="8" fill="url(#lgbg)"/>
+                    <circle cx="10" cy="11" r="3" fill="rgba(255,255,255,0.4)"/>
+                    <circle cx="22" cy="11" r="3" fill="rgba(255,255,255,0.4)"/>
+                    <circle cx="10" cy="21" r="3" fill="rgba(255,255,255,0.4)"/>
+                    <path d="M17 21l3 3 5-6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <defs>
+                        <linearGradient id="lgbg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#667eea"/>
+                            <stop offset="100%" stop-color="#764ba2"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <h1>Workstation Checkup</h1>
             <p>Sign in with your JustEatTakeaway account</p>
             <button class="google-btn" onclick="signInWithGoogle()">
                 <svg width="20" height="20" viewBox="0 0 20 20">
@@ -64,93 +83,144 @@
 
     <!-- Main App Container -->
     <div class="app-container" id="appContainer">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-left">
-                <h1>🏢 Workstation Checkup</h1>
-                <div class="subtitle">Berlin Office - Desk Inspection Tool</div>
+
+        <!-- Slim Header -->
+        <header class="header">
+            <div class="header-brand">
+                <svg class="header-logo" width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <rect width="32" height="32" rx="8" fill="rgba(255,255,255,0.2)"/>
+                    <circle cx="10" cy="11" r="3" fill="rgba(255,255,255,0.55)"/>
+                    <circle cx="22" cy="11" r="3" fill="rgba(255,255,255,0.55)"/>
+                    <circle cx="10" cy="21" r="3" fill="rgba(255,255,255,0.55)"/>
+                    <path d="M17 21l3 3 5-6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="header-title">Workstation Checkup</span>
             </div>
             <div class="user-info">
-                <img id="userPhoto" src="" alt="User">
-                <span id="userName"></span>
+                <img id="userPhoto" src="" alt="User avatar">
+                <span id="userName" class="user-name"></span>
                 <button class="logout-btn" onclick="logout()">Logout</button>
             </div>
-        </div>
+        </header>
 
         <!-- Tabs -->
         <div class="tabs">
-            <div class="tab active" onclick="switchTab('inspect')">🔍 Floor Inspection</div>
-            <div class="tab" onclick="switchTab('dashboard')">📊 Dashboard</div>
+            <div class="tab active" onclick="switchTab('inspect')">&#128269; Floor Inspection</div>
+            <div class="tab" onclick="switchTab('dashboard')">&#128202; Dashboard</div>
         </div>
 
         <!-- Floor Inspection Tab -->
         <div class="tab-content active" id="inspectTab">
-            <!-- Controls -->
-            <div class="controls">
-                <label>
-                    Building:
-                    <select id="buildingSelect" onchange="onBuildingChange()">
-                        <option value="">Select Building</option>
-                    </select>
-                </label>
-                <label>
-                    Floor:
-                    <select id="floorSelect" onchange="onFloorChange()">
-                        <option value="">Select Floor</option>
-                    </select>
-                </label>
-                <button onclick="toggleBulkMode()" id="bulkModeBtn">
-                    ✏️ Bulk Edit Mode
-                </button>
-                <button class="secondary" onclick="saveAll()">
-                    💾 Save All Changes
-                </button>
+
+            <!-- Sticky Toolbar: replaces the old .controls bar -->
+            <div class="map-toolbar" id="mapToolbar">
+                <div class="toolbar-group toolbar-selectors">
+                    <div class="toolbar-select-wrap">
+                        <label class="toolbar-label" for="buildingSelect">Building</label>
+                        <select id="buildingSelect" class="toolbar-select" onchange="onBuildingChange()">
+                            <option value="">Select&hellip;</option>
+                        </select>
+                    </div>
+                    <div class="toolbar-select-wrap">
+                        <label class="toolbar-label" for="floorSelect">Floor</label>
+                        <select id="floorSelect" class="toolbar-select" onchange="onFloorChange()">
+                            <option value="">Select&hellip;</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="toolbar-divider" aria-hidden="true"></div>
+
+                <div class="toolbar-group toolbar-actions">
+                    <button class="toolbar-btn toolbar-btn--bulk"
+                            id="bulkModeBtn"
+                            onclick="toggleBulkMode()"
+                            title="Toggle Bulk Edit Mode">
+                        <span class="tbtn-icon">&#9999;&#65039;</span>
+                        <span class="tbtn-label">Bulk Edit</span>
+                    </button>
+                    <button class="toolbar-btn toolbar-btn--save"
+                            onclick="saveAll()"
+                            title="Save All Changes">
+                        <span class="tbtn-icon">&#128190;</span>
+                        <span class="tbtn-label">Save</span>
+                    </button>
+                    <button class="toolbar-btn toolbar-btn--stats"
+                            id="statsToggleBtn"
+                            onclick="toggleStatsPanel()"
+                            title="Show / hide stats"
+                            aria-expanded="false"
+                            aria-controls="statsPanel">
+                        <span class="tbtn-icon">&#128202;</span>
+                        <span class="tbtn-label">Stats</span>
+                    </button>
+                </div>
             </div>
 
-            <!-- Bulk Actions Bar -->
+            <!-- Bulk Actions Bar (shown during bulk mode) -->
             <div class="bulk-actions" id="bulkActionsBar">
                 <div class="bulk-info">
-                    <span id="selectedCount">0</span> desks selected
+                    <span id="selectedCount">0</span> selected
                 </div>
-                <button onclick="markSelectedAs('inspected')">✅ Mark as Inspected</button>
-                <button onclick="markSelectedAs('issue')">❌ Mark as Issue</button>
-                <button onclick="openBulkEditModal()">⚙️ Bulk Edit Details</button>
-                <button onclick="clearSelection()">Clear Selection</button>
+                <button onclick="markSelectedAs('inspected')">&#9989; Mark Inspected</button>
+                <button onclick="markSelectedAs('issue')">&#10060; Mark Issue</button>
+                <button onclick="openBulkEditModal()">&#9881;&#65039; Edit Details</button>
+                <button onclick="clearSelection()">&#10005; Clear</button>
             </div>
 
-            <!-- Stats -->
-            <div class="stats">
-                <div class="stat-card-main" data-type="Desk" onclick="filterByType('Desk')">
-                    <div class="stat-main-value" id="deskTotal">0</div>
-                    <div class="stat-main-label">DESKS</div>
-                    <div class="stat-sub-row">
-                        <div class="stat-card-sub"><div class="stat-sub-value" id="deskIssues">0</div><div class="stat-sub-label">Issues</div></div>
-                        <div class="stat-card-sub"><div class="stat-sub-value" id="deskProgress">0%</div><div class="stat-sub-label">Progress</div></div>
+            <!-- Collapsible Stats Panel (hidden by default) -->
+            <div class="stats-panel" id="statsPanel" aria-hidden="true">
+                <div class="stats">
+                    <div class="stat-card-main" data-type="Desk" onclick="filterByType('Desk')">
+                        <div class="stat-main-value" id="deskTotal">0</div>
+                        <div class="stat-main-label">DESKS</div>
+                        <div class="stat-sub-row">
+                            <div class="stat-card-sub">
+                                <div class="stat-sub-value" id="deskIssues">0</div>
+                                <div class="stat-sub-label">Issues</div>
+                            </div>
+                            <div class="stat-card-sub">
+                                <div class="stat-sub-value" id="deskProgress">0%</div>
+                                <div class="stat-sub-label">Progress</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="stat-card-main" data-type="MeetingRoom" onclick="filterByType('MeetingRoom')">
-                    <div class="stat-main-value" id="meetingTotal">0</div>
-                    <div class="stat-main-label">MEETING ROOMS</div>
-                    <div class="stat-sub-row">
-                        <div class="stat-card-sub"><div class="stat-sub-value" id="meetingIssues">0</div><div class="stat-sub-label">Issues</div></div>
-                        <div class="stat-card-sub"><div class="stat-sub-value" id="meetingProgress">0%</div><div class="stat-sub-label">Progress</div></div>
+                    <div class="stat-card-main" data-type="MeetingRoom" onclick="filterByType('MeetingRoom')">
+                        <div class="stat-main-value" id="meetingTotal">0</div>
+                        <div class="stat-main-label">MEETING ROOMS</div>
+                        <div class="stat-sub-row">
+                            <div class="stat-card-sub">
+                                <div class="stat-sub-value" id="meetingIssues">0</div>
+                                <div class="stat-sub-label">Issues</div>
+                            </div>
+                            <div class="stat-card-sub">
+                                <div class="stat-sub-value" id="meetingProgress">0%</div>
+                                <div class="stat-sub-label">Progress</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="stat-card-main" data-type="ServerRoom" onclick="filterByType('ServerRoom')">
-                    <div class="stat-main-value" id="serverTotal">0</div>
-                    <div class="stat-main-label">SERVER ROOMS</div>
-                    <div class="stat-sub-row">
-                        <div class="stat-card-sub"><div class="stat-sub-value" id="serverIssues">0</div><div class="stat-sub-label">Issues</div></div>
-                        <div class="stat-card-sub"><div class="stat-sub-value" id="serverProgress">0%</div><div class="stat-sub-label">Progress</div></div>
+                    <div class="stat-card-main" data-type="ServerRoom" onclick="filterByType('ServerRoom')">
+                        <div class="stat-main-value" id="serverTotal">0</div>
+                        <div class="stat-main-label">SERVER ROOMS</div>
+                        <div class="stat-sub-row">
+                            <div class="stat-card-sub">
+                                <div class="stat-sub-value" id="serverIssues">0</div>
+                                <div class="stat-sub-label">Issues</div>
+                            </div>
+                            <div class="stat-card-sub">
+                                <div class="stat-sub-value" id="serverProgress">0%</div>
+                                <div class="stat-sub-label">Progress</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="stat-card-completion">
-                    <div class="stat-main-value" id="completionRate">0%</div>
-                    <div class="stat-main-label">COMPLETION</div>
+                    <div class="stat-card-completion">
+                        <div class="stat-main-value" id="completionRate">0%</div>
+                        <div class="stat-main-label">COMPLETION</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Floor Plan Container with Zoom -->
+            <!-- Floor Plan (fills remaining viewport) -->
             <div class="floor-container">
                 <div class="loading" id="floorLoading">Select a building and floor to begin</div>
                 <div class="floor-viewer" id="floorViewer">
@@ -158,8 +228,8 @@
                 </div>
                 <div class="zoom-controls">
                     <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
-                    <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">−</button>
-                    <button class="zoom-btn" onclick="zoomReset()" title="Fit to Screen">⊡</button>
+                    <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">&minus;</button>
+                    <button class="zoom-btn" onclick="zoomReset()" title="Fit to Screen">&#8862;</button>
                 </div>
             </div>
         </div>
@@ -167,27 +237,27 @@
         <!-- Dashboard Tab -->
         <div class="tab-content" id="dashboardTab">
             <div class="dashboard">
-                <h2>📊 Inspection Dashboard</h2>
+                <h2>&#128202; Inspection Dashboard</h2>
                 <div class="dashboard-grid">
-                    <div class="dashboard-card">
+                    <div class="dashboard-card dashboard-card--clickable" onclick="openDrillDown('all')" title="Click to see all desks">
                         <div class="metric">
                             <div class="metric-value" id="dashTotalDesks">0</div>
                             <div class="metric-label">Total Desks</div>
                         </div>
                     </div>
-                    <div class="dashboard-card">
+                    <div class="dashboard-card dashboard-card--clickable" onclick="openDrillDown('inspected')" title="Click to see inspected desks">
                         <div class="metric">
                             <div class="metric-value" id="dashInspected">0</div>
                             <div class="metric-label">Inspected</div>
                         </div>
                     </div>
-                    <div class="dashboard-card">
+                    <div class="dashboard-card dashboard-card--clickable" onclick="openDrillDown('issue')" title="Click to see issue desks">
                         <div class="metric">
                             <div class="metric-value" id="dashIssues">0</div>
                             <div class="metric-label">Issues</div>
                         </div>
                     </div>
-                    <div class="dashboard-card">
+                    <div class="dashboard-card dashboard-card--clickable" onclick="openDrillDown('inspected')" title="Click to see inspected desks">
                         <div class="metric">
                             <div class="metric-value" id="dashCompletion">0%</div>
                             <div class="metric-label">Completion</div>
@@ -197,13 +267,13 @@
 
                 <div class="dashboard-grid">
                     <div class="dashboard-card">
-                        <h3>📈 Progress by Building</h3>
+                        <h3>&#128200; Progress by Building</h3>
                         <div class="chart-container">
                             <canvas id="buildingChart"></canvas>
                         </div>
                     </div>
                     <div class="dashboard-card">
-                        <h3>📊 Status Distribution</h3>
+                        <h3>&#128202; Status Distribution</h3>
                         <div class="chart-container">
                             <canvas id="statusChart"></canvas>
                         </div>
@@ -211,10 +281,29 @@
                 </div>
 
                 <div class="dashboard-card">
-                    <h3>🏗️ Floor-by-Floor Breakdown</h3>
-                    <div class="stats-grid" id="floorBreakdown"></div>
+                    <h3>&#128295; Equipment Analysis</h3>
+                    <div class="equipment-grid" id="equipmentGrid"></div>
+                </div>
+
+                <!-- Missing Items: one card per equipment checkbox -->
+                <div class="dashboard-card">
+                    <h3>&#128269; Missing Items</h3>
+                    <p class="missing-subtitle">Inspected desks with equipment unchecked &mdash; click any card to see which desks</p>
+                    <div class="missing-items-grid" id="missingItemsGrid"></div>
                 </div>
             </div>
+        </div>
+
+    </div><!-- /app-container -->
+
+    <!-- Drill-Down Modal -->
+    <div class="modal" id="drillDownModal" style="display:none;">
+        <div class="modal-content modal-content--wide">
+            <div class="modal-header">
+                <h2 id="drillDownTitle">Desks</h2>
+                <button class="close-btn" onclick="closeDrillDown()">&times;</button>
+            </div>
+            <div class="modal-body modal-body--scroll" id="drillDownBody"></div>
         </div>
     </div>
 
@@ -225,9 +314,7 @@
                 <h2 id="modalTitle">Desk Details</h2>
                 <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Dynamic content will be inserted here -->
-            </div>
+            <div class="modal-body" id="modalBody"></div>
             <div class="modal-footer">
                 <button class="secondary" onclick="closeModal()">Cancel</button>
                 <button class="primary" onclick="saveInspectionData()">Save Changes</button>
@@ -236,6 +323,16 @@
     </div>
 
     <script>
-</script>
+    // Stats panel toggle — plain JS, no module dependency
+    function toggleStatsPanel() {
+        var panel = document.getElementById('statsPanel');
+        var btn   = document.getElementById('statsToggleBtn');
+        if (!panel || !btn) return;
+        var isOpen = panel.classList.toggle('stats-panel--open');
+        btn.classList.toggle('toolbar-btn--active', isOpen);
+        btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        panel.setAttribute('aria-hidden',  isOpen ? 'false' : 'true');
+    }
+    </script>
 </body>
 </html>

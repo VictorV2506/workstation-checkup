@@ -1,27 +1,30 @@
 // public/js/features/zoom.js
 //
-// Zoom controls for the floor plan viewer.
-//
-// Bug fix: CSS transform:scale() is visual-only — scroll container
-// only knows layout size. With transform-origin:center center the
-// left overflow was in negative scroll space (unreachable).
-// Fix: transform-origin:0 0 in CSS + applyZoom() expands
-// marginRight/Bottom so scroll container sees the full scaled area.
+// Fixes:
+//   1. Layout thrashing: reads batched before writes (4 reflows -> 1)
+//   2. JS-controlled transition: floor load is instant, zoom buttons animate
+//   3. transform-origin:0 0 + marginRight/Bottom keeps left side scrollable
 //
 // Depends on: constants.js (MIN_ZOOM, MAX_ZOOM, ZOOM_STEP)
 //             state.js     (currentZoom)
 
+var _isZoomGesture = false;
+
 function zoomIn() {
     if (currentZoom < MAX_ZOOM) {
+        _isZoomGesture = true;
         currentZoom = Math.min(currentZoom + ZOOM_STEP, MAX_ZOOM);
         applyZoom();
+        _isZoomGesture = false;
     }
 }
 
 function zoomOut() {
     if (currentZoom > MIN_ZOOM) {
+        _isZoomGesture = true;
         currentZoom = Math.max(currentZoom - ZOOM_STEP, MIN_ZOOM);
         applyZoom();
+        _isZoomGesture = false;
     }
 }
 
@@ -42,20 +45,21 @@ function applyZoom() {
     var viewer = document.getElementById('floorViewer');
     if (!plan) return;
 
-    plan.style.transform = 'scale(' + currentZoom + ')';
+    // Animate ONLY on zoom button press — floor load is instant.
+    plan.style.transition = _isZoomGesture ? 'transform 0.2s ease-out' : 'none';
 
-    var scaledW = Math.round(plan.offsetWidth  * currentZoom);
-    var scaledH = Math.round(plan.offsetHeight * currentZoom);
+    // ALL reads first (1 reflow total)
+    var planW   = plan.offsetWidth;
+    var planH   = plan.offsetHeight;
+    var viewerW = viewer ? viewer.offsetWidth : 0;
 
-    // Expand right + bottom margins so scroll container sees the
-    // full scaled visual size (transform does not affect layout).
-    plan.style.marginRight  = Math.max(0, scaledW - plan.offsetWidth)  + 'px';
-    plan.style.marginBottom = Math.max(0, scaledH - plan.offsetHeight) + 'px';
+    // ALL writes after (0 additional reflows)
+    var scaledW   = Math.round(planW * currentZoom);
+    var scaledH   = Math.round(planH * currentZoom);
+    var leftSpace = viewerW - scaledW;
 
-    // Centre horizontally when content fits within the viewer.
-    // Zero out when zoomed in so the user can scroll freely left.
-    if (viewer) {
-        var leftSpace = viewer.offsetWidth - scaledW;
-        plan.style.marginLeft = leftSpace > 0 ? Math.round(leftSpace / 2) + 'px' : '0px';
-    }
+    plan.style.transform    = 'scale(' + currentZoom + ')';
+    plan.style.marginRight  = Math.max(0, scaledW - planW) + 'px';
+    plan.style.marginBottom = Math.max(0, scaledH - planH) + 'px';
+    plan.style.marginLeft   = leftSpace > 0 ? Math.round(leftSpace / 2) + 'px' : '0px';
 }

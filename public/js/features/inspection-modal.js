@@ -52,7 +52,28 @@ function _statusOptions(saved) {
 
 // ─── Form renderers (one per type) ───────────────────────────────────────────
 
+
+// ─── Status → checklist behaviour ────────────────────────────────────────────
+// Mandatory items are locked when status is OK; optional items (Keyboard, Mouse)
+// are never locked so desks without them can still be marked OK.
+const MANDATORY_CHECKS = ['checkPower', 'checkLAN', 'checkMon1', 'checkMon2', 'checkTBT', 'checkDocking'];
+
+function onStatusChange(status) {
+  const isOK = status === 'inspected';
+  MANDATORY_CHECKS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) { return; }
+    if (isOK) {
+      el.checked  = true;   // auto-check
+      el.disabled = true;   // lock — can't uncheck a mandatory item when OK
+    } else {
+      el.disabled = false;  // unlock — user can edit freely for pending/issue
+    }
+  });
+}
+
 function _renderDeskForm(itemId, d) {
+  const locked = d.status === 'inspected'; // mandatory items lock when OK
   return `
     <input type="hidden" id="currentItemId" value="${itemId}">
     <input type="hidden" id="currentItemType" value="Desk">
@@ -60,30 +81,31 @@ function _renderDeskForm(itemId, d) {
     <!-- Equipment Checklist -->
     <div class="checklist-section">
       <h3>⚡ Equipment Checklist</h3>
+      <p class="checklist-hint">Mandatory items lock automatically when status is set to OK.</p>
       <div class="checkbox-grid">
         <div class="checkbox-item">
-          <input type="checkbox" id="checkPower"    ${d.checkPower    ? 'checked' : ''}><label for="checkPower">Power</label>
+          <input type="checkbox" id="checkPower"    ${d.checkPower    ? 'checked' : ''} ${locked ? 'disabled' : ''}><label for="checkPower">Power</label>
         </div>
         <div class="checkbox-item">
-          <input type="checkbox" id="checkLAN"      ${d.checkLAN      ? 'checked' : ''}><label for="checkLAN">LAN</label>
+          <input type="checkbox" id="checkLAN"      ${d.checkLAN      ? 'checked' : ''} ${locked ? 'disabled' : ''}><label for="checkLAN">LAN</label>
         </div>
         <div class="checkbox-item">
-          <input type="checkbox" id="checkMon1"     ${d.checkMon1     ? 'checked' : ''}><label for="checkMon1">Mon 1</label>
+          <input type="checkbox" id="checkMon1"     ${d.checkMon1     ? 'checked' : ''} ${locked ? 'disabled' : ''}><label for="checkMon1">Mon 1</label>
         </div>
         <div class="checkbox-item">
-          <input type="checkbox" id="checkMon2"     ${d.checkMon2     ? 'checked' : ''}><label for="checkMon2">Mon 2</label>
+          <input type="checkbox" id="checkMon2"     ${d.checkMon2     ? 'checked' : ''} ${locked ? 'disabled' : ''}><label for="checkMon2">Mon 2</label>
         </div>
         <div class="checkbox-item">
-          <input type="checkbox" id="checkPTT"      ${d.checkPTT      ? 'checked' : ''}><label for="checkPTT">PTT</label>
+          <input type="checkbox" id="checkTBT"      ${d.checkTBT      ? 'checked' : ''} ${locked ? 'disabled' : ''}><label for="checkTBT">TBT</label>
+        </div>
+        <div class="checkbox-item optional-item">
+          <input type="checkbox" id="checkKeyboard" ${d.checkKeyboard ? 'checked' : ''}><label for="checkKeyboard">Keyboard <span class="optional-tag">optional</span></label>
         </div>
         <div class="checkbox-item">
-          <input type="checkbox" id="checkKeyboard" ${d.checkKeyboard ? 'checked' : ''}><label for="checkKeyboard">Keyboard</label>
+          <input type="checkbox" id="checkDocking"  ${d.checkDocking  ? 'checked' : ''} ${locked ? 'disabled' : ''}><label for="checkDocking">Docking</label>
         </div>
-        <div class="checkbox-item">
-          <input type="checkbox" id="checkDocking"  ${d.checkDocking  ? 'checked' : ''}><label for="checkDocking">Docking</label>
-        </div>
-        <div class="checkbox-item">
-          <input type="checkbox" id="checkMouse"    ${d.checkMouse    ? 'checked' : ''}><label for="checkMouse">Mouse</label>
+        <div class="checkbox-item optional-item">
+          <input type="checkbox" id="checkMouse"    ${d.checkMouse    ? 'checked' : ''}><label for="checkMouse">Mouse <span class="optional-tag">optional</span></label>
         </div>
       </div>
     </div>
@@ -119,7 +141,7 @@ function _renderDeskForm(itemId, d) {
       <h3>📝 Status & Notes</h3>
       <div class="form-group">
         <label>Status</label>
-        <select id="itemStatus">${_statusOptions(d.status)}</select>
+        <select id="itemStatus" onchange="onStatusChange(this.value)">${_statusOptions(d.status)}</select>
       </div>
       <div class="form-group">
         <label>Remarks</label>
@@ -253,10 +275,26 @@ function saveInspectionData() {
     const rightScreen = document.getElementById('bulkRightScreen')?.value;
     const remarks     = document.getElementById('bulkRemarks')?.value;
 
+    const bulkStatus = document.getElementById('bulkStatus')?.value;
+
+    if (bulkStatus)  bulkData.status      = bulkStatus;
     if (leftScreen)  bulkData.leftScreen  = leftScreen;
     if (dock)        bulkData.dock        = dock;
     if (rightScreen) bulkData.rightScreen = rightScreen;
     if (remarks)     bulkData.remarks     = remarks;
+
+    // Only write checkbox states if user explicitly enabled the checklist toggle
+    const applyChecks = document.getElementById('bulkApplyChecks')?.checked;
+    if (applyChecks) {
+      bulkData.checkPower    = document.getElementById('bulkCheckPower')?.checked    ?? false;
+      bulkData.checkLAN      = document.getElementById('bulkCheckLAN')?.checked      ?? false;
+      bulkData.checkMon1     = document.getElementById('bulkCheckMon1')?.checked     ?? false;
+      bulkData.checkMon2     = document.getElementById('bulkCheckMon2')?.checked     ?? false;
+      bulkData.checkTBT      = document.getElementById('bulkCheckTBT')?.checked      ?? false;
+      bulkData.checkKeyboard = document.getElementById('bulkCheckKeyboard')?.checked ?? false;
+      bulkData.checkDocking  = document.getElementById('bulkCheckDocking')?.checked  ?? false;
+      bulkData.checkMouse    = document.getElementById('bulkCheckMouse')?.checked    ?? false;
+    }
 
     const batch = db.batch();
     selectedDesks.forEach(id => {
@@ -296,7 +334,7 @@ function saveInspectionData() {
       checkLAN:      document.getElementById('checkLAN').checked,
       checkMon1:     document.getElementById('checkMon1').checked,
       checkMon2:     document.getElementById('checkMon2').checked,
-      checkPTT:      document.getElementById('checkPTT').checked,
+      checkTBT:      document.getElementById('checkTBT').checked,
       checkKeyboard: document.getElementById('checkKeyboard').checked,
       checkDocking:  document.getElementById('checkDocking').checked,
       checkMouse:    document.getElementById('checkMouse').checked,
