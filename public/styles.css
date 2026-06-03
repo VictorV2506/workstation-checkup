@@ -364,8 +364,8 @@ body {
     background-repeat: no-repeat;
     background-position: center;
     user-select: none;
-    margin: auto;
-    transform-origin: center center;
+    /* centering handled dynamically by applyZoom() marginLeft */
+    transform-origin: 0 0;
     transition: transform 0.2s ease-out;
 }
 
