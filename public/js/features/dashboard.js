@@ -1,4 +1,4 @@
-// dashboard.js — Session 17 (fix): interactive dashboard + equipment analysis.
+//var completion = total > 0 ? Math.round((inspected / total) * 100) : 0;// dashboard.js — Session 17 (fix): interactive dashboard + equipment analysis.
 // Depends on globals: floorConfigs, desksData (read-only)
 // Exposes globals: updateDashboard, switchTab, switchTabTo,
 //                  openDrillDown, closeDrillDown, navigateToDesk
@@ -23,10 +23,10 @@
             floorConfigs.forEach(function(floor) {
                 var di = floor.desks.filter(function(d) { return !d.type || d.type === 'Desk'; });
                 total     += di.length;
-                inspected += di.filter(function(d) { return desksData[d.id] && desksData[d.id].status === 'inspected'; }).length;
-                issues    += di.filter(function(d) { return desksData[d.id] && desksData[d.id].status === 'issue'; }).length;
+                inspected += di.filter(function(d) { return desksData[d.number] && desksData[d.number].status === 'inspected'; }).length;
+                issues    += di.filter(function(d) { return desksData[d.number] && desksData[d.number].status === 'issue'; }).length;
             });
-            var completion = total > 0 ? Math.round((inspected / total) * 100) : 0;
+            var completion = total > 0 ? Math.round(((inspected + issues) / total) * 100) : 0;
             document.getElementById('dashTotalDesks').textContent = total;
             document.getElementById('dashInspected').textContent  = inspected;
             document.getElementById('dashIssues').textContent     = issues;
@@ -45,6 +45,7 @@
             });
             document.getElementById(tabName + 'Tab').classList.add('active');
             if (tabName === 'dashboard') { updateDashboard(); }
+            if (tabName === 'history')   { loadHistory(30); }
         }
 
         function switchTab(tabName) {
@@ -57,7 +58,7 @@
                 if (!buildingData[floor.building]) { buildingData[floor.building] = { total: 0, inspected: 0 }; }
                 floor.desks.filter(function(d) { return !d.type || d.type === 'Desk'; }).forEach(function(desk) {
                     buildingData[floor.building].total++;
-                    if (desksData[desk.id] && desksData[desk.id].status === 'inspected') { buildingData[floor.building].inspected++; }
+                    if (desksData[desk.number] && desksData[desk.number].status === 'inspected') { buildingData[floor.building].inspected++; }
                 });
             });
             var bKeys  = Object.keys(buildingData).sort();
@@ -81,7 +82,7 @@
             var pending = 0, inspectedCount = 0, issuesCount = 0;
             floorConfigs.forEach(function(floor) {
                 floor.desks.filter(function(d) { return !d.type || d.type === 'Desk'; }).forEach(function(desk) {
-                    var st = desksData[desk.id] && desksData[desk.id].status;
+                    var st = desksData[desk.number] && desksData[desk.number].status;
                     if (st === 'inspected') { inspectedCount++; }
                     else if (st === 'issue') { issuesCount++; }
                     else { pending++; }
@@ -115,20 +116,20 @@
 
             floorConfigs.forEach(function(floor) {
                 floor.desks.filter(function(d) { return !d.type || d.type === 'Desk'; }).forEach(function(desk) {
-                    var data    = desksData[desk.id];
+                    var data    = desksData[desk.number];
                     var st      = (data && data.status) || 'pending';
                     var include = false;
 
                     if (isMissing) {
                         // Only inspected desks where the checkbox field is explicitly false
-                        include = !!(data && data.status === 'inspected' && data[missingField] === false);
+                        include = !!(data && (data.status === 'inspected' || data.status === 'issue') && data[missingField] === false);
                     } else {
                         include = (filter === 'all' || st === filter);
                     }
 
                     if (include) {
                         rows.push({
-                            id:         desk.id,
+                            id:         desk.number,
                             building:   floor.building,
                             floorLabel: 'Floor ' + floor.floor,
                             floorId:    floor.id,
@@ -208,7 +209,7 @@
                     var t = desk.type || 'Desk';
                     if (!WHITELIST[t]) { return; }
                     counts[t].total++;
-                    var st = desksData[desk.id] && desksData[desk.id].status;
+                    var st = desksData[desk.number] && desksData[desk.number].status;
                     if (st === 'inspected') { counts[t].inspected++; }
                     else if (st === 'issue') { counts[t].issues++; }
                 });
@@ -250,8 +251,8 @@
                     floor.desks
                         .filter(function(d) { return !d.type || d.type === 'Desk'; })
                         .forEach(function(desk) {
-                            var data = desksData[desk.id];
-                            if (data && data.status === 'inspected' && data[check.field] === false) {
+                            var data = desksData[desk.number];
+                            if (data && (data.status === 'inspected' || data.status === 'issue') && data[check.field] === false) {
                                 count++;
                             }
                         });

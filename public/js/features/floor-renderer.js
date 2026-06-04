@@ -68,7 +68,7 @@ function renderFloorPlan() {
         marker.className      = markerClass;
         marker.style.left     = item.x + 'px';
         marker.style.top      = item.y + 'px';
-        marker.dataset.deskId = item.id;
+        marker.dataset.deskId = item.number;
         marker.dataset.type   = itemType;
 
         if (itemType === 'MeetingRoom' || itemType === 'ServerRoom') {
@@ -78,7 +78,7 @@ function renderFloorPlan() {
             marker.style.fontSize = Math.round(size * 0.29) + 'px';
         }
 
-        var itemData = desksData[item.id];
+        var itemData = desksData[item.number];
         if (itemData) {
             if (itemData.status === 'inspected') marker.classList.add('inspected');
             if (itemData.status === 'issue')     marker.classList.add('issue');
@@ -92,7 +92,7 @@ function renderFloorPlan() {
         if (markerClass !== 'amenity-marker') {
             marker.addEventListener('click', (function(id) {
                 return function(e) { handleDeskClick(e, id); };
-            })(item.id));
+            })(item.number));
         }
 
         fragment.appendChild(marker);

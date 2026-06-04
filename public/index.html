@@ -5,13 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Workstation Checkup - BER Office</title>
 
-    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-
-    <!-- External CSS -->
     <link rel="stylesheet" href="styles.css">
-
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -37,6 +32,7 @@
     <script src="js/features/zoom.js"></script>
     <script src="js/features/stats.js"></script>
     <script src="js/features/filters.js"></script>
+    <script src="js/features/history.js"></script>
     <script src="js/features/inspection-modal.js"></script>
     <script src="js/features/desk-interactions.js"></script>
     <script src="js/features/dashboard.js"></script>
@@ -44,7 +40,7 @@
     <script src="js/features/bulk-edit.js"></script>
     <script src="js/features/floor-renderer.js"></script>
 
-    <!-- Chart.js for Dashboard -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -81,10 +77,9 @@
         </div>
     </div>
 
-    <!-- Main App Container -->
+    <!-- Main App -->
     <div class="app-container" id="appContainer">
 
-        <!-- Slim Header -->
         <header class="header">
             <div class="header-brand">
                 <svg class="header-logo" width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -103,16 +98,16 @@
             </div>
         </header>
 
-        <!-- Tabs -->
+        <!-- Tabs: Floor Inspection | Dashboard | History -->
         <div class="tabs">
             <div class="tab active" onclick="switchTab('inspect')">&#128269; Floor Inspection</div>
             <div class="tab" onclick="switchTab('dashboard')">&#128202; Dashboard</div>
+            <div class="tab" onclick="switchTab('history')">&#128203; History</div>
         </div>
 
-        <!-- Floor Inspection Tab -->
+        <!-- ── Floor Inspection Tab ── -->
         <div class="tab-content active" id="inspectTab">
 
-            <!-- Sticky Toolbar: replaces the old .controls bar -->
             <div class="map-toolbar" id="mapToolbar">
                 <div class="toolbar-group toolbar-selectors">
                     <div class="toolbar-select-wrap">
@@ -157,7 +152,6 @@
                 </div>
             </div>
 
-            <!-- Bulk Actions Bar (shown during bulk mode) -->
             <div class="bulk-actions" id="bulkActionsBar">
                 <div class="bulk-info">
                     <span id="selectedCount">0</span> selected
@@ -168,7 +162,6 @@
                 <button onclick="clearSelection()">&#10005; Clear</button>
             </div>
 
-            <!-- Collapsible Stats Panel (hidden by default) -->
             <div class="stats-panel" id="statsPanel" aria-hidden="true">
                 <div class="stats">
                     <div class="stat-card-main" data-type="Desk" onclick="filterByType('Desk')">
@@ -220,7 +213,6 @@
                 </div>
             </div>
 
-            <!-- Floor Plan (fills remaining viewport) -->
             <div class="floor-container">
                 <div class="loading" id="floorLoading">Select a building and floor to begin</div>
                 <div class="floor-viewer" id="floorViewer">
@@ -234,7 +226,7 @@
             </div>
         </div>
 
-        <!-- Dashboard Tab -->
+        <!-- ── Dashboard Tab ── -->
         <div class="tab-content" id="dashboardTab">
             <div class="dashboard">
                 <h2>&#128202; Inspection Dashboard</h2>
@@ -285,18 +277,43 @@
                     <div class="equipment-grid" id="equipmentGrid"></div>
                 </div>
 
-                <!-- Missing Items: one card per equipment checkbox -->
                 <div class="dashboard-card">
                     <h3>&#128269; Missing Items</h3>
-                    <p class="missing-subtitle">Inspected desks with equipment unchecked &mdash; click any card to see which desks</p>
+                    <p class="missing-subtitle">Visited desks with missing equipment &mdash; click any card to see which desks</p>
                     <div class="missing-items-grid" id="missingItemsGrid"></div>
                 </div>
             </div>
         </div>
 
+        <!-- ── History Tab ── -->
+        <div class="tab-content" id="historyTab">
+            <div class="history-container">
+
+                <div class="history-toolbar">
+                    <h2>&#128203; Inspection History</h2>
+                    <div class="history-filters">
+                        <button class="history-filter-btn active" data-days="7"  onclick="loadHistory(7)">Last 7 days</button>
+                        <button class="history-filter-btn"        data-days="30" onclick="loadHistory(30)">Last 30 days</button>
+                        <button class="history-filter-btn"        data-days="90" onclick="loadHistory(90)">Last 90 days</button>
+                    </div>
+                </div>
+
+                <div id="historyTableContainer">
+                    <p class="history-empty">Select a time period to load history.</p>
+                </div>
+
+                <div class="history-pagination">
+                    <button class="history-load-more" id="historyLoadMore" onclick="loadMoreHistory()" style="display:none">
+                        Load more &darr;
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
     </div><!-- /app-container -->
 
-    <!-- Drill-Down Modal -->
+    <!-- ── Drill-Down Modal ── -->
     <div class="modal" id="drillDownModal" style="display:none;">
         <div class="modal-content modal-content--wide">
             <div class="modal-header">
@@ -307,7 +324,7 @@
         </div>
     </div>
 
-    <!-- Desk Details Modal -->
+    <!-- ── Desk Details Modal ── -->
     <div class="modal" id="deskModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -322,8 +339,18 @@
         </div>
     </div>
 
+    <!-- ── Per-Desk Timeline Modal ── -->
+    <div class="modal" id="timelineModal" style="display:none;">
+        <div class="modal-content modal-content--wide">
+            <div class="modal-header">
+                <h2 id="timelineTitle">Desk History</h2>
+                <button class="close-btn" onclick="closeTimeline()">&times;</button>
+            </div>
+            <div class="modal-body modal-body--scroll" id="timelineBody"></div>
+        </div>
+    </div>
+
     <script>
-    // Stats panel toggle — plain JS, no module dependency
     function toggleStatsPanel() {
         var panel = document.getElementById('statsPanel');
         var btn   = document.getElementById('statsToggleBtn');

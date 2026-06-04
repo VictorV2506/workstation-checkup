@@ -12,9 +12,9 @@ function updateStats() {
 
     function counts(group) {
         var total     = group.length;
-        var inspected = group.filter(function(d) { return desksData[d.id] && desksData[d.id].status === 'inspected'; }).length;
-        var issues    = group.filter(function(d) { return desksData[d.id] && desksData[d.id].status === 'issue'; }).length;
-        var progress  = total > 0 ? Math.round((inspected / total) * 100) : 0;
+        var inspected = group.filter(function(d) { return desksData[d.number] && desksData[d.number].status === 'inspected'; }).length;
+        var issues    = group.filter(function(d) { return desksData[d.number] && desksData[d.number].status === 'issue'; }).length;
+        var progress  = total > 0 ? Math.round(((inspected + issues) / total) * 100) : 0;
         return { total: total, inspected: inspected, issues: issues, progress: progress };
     }
 
@@ -41,7 +41,7 @@ function updateStats() {
             .filter(function(d) { return !d.type || inspectableTypes.indexOf(d.type) !== -1; })
             .forEach(function(d) {
                 allInspectable++;
-                if (desksData[d.id] && desksData[d.id].status === 'inspected') allInspected++;
+                if (desksData[d.number] && (desksData[d.number].status === 'inspected' || desksData[d.number].status === 'issue')) allInspected++;
             });
     });
     var completion = allInspectable > 0 ? Math.round((allInspected / allInspectable) * 100) : 0;

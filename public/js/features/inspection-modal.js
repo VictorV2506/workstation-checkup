@@ -3,6 +3,7 @@
 // Replaces: desk-modal.js
 // Depends on globals: desksData, currentFloor, currentUser, db, selectedDesks
 // Calls: renderFloorPlan(), updateStats(), updateDashboard(), clearSelection()
+// Calls: writeHistoryEntry(), writeBulkHistoryEntries() from history.js
 
 // ─── Equipment option lists ───────────────────────────────────────────────────
 
@@ -50,12 +51,7 @@ function _statusOptions(saved) {
   `;
 }
 
-// ─── Form renderers (one per type) ───────────────────────────────────────────
-
-
 // ─── Status → checklist behaviour ────────────────────────────────────────────
-// Mandatory items are locked when status is OK; optional items (Keyboard, Mouse)
-// are never locked so desks without them can still be marked OK.
 const MANDATORY_CHECKS = ['checkPower', 'checkLAN', 'checkMon1', 'checkMon2', 'checkTBT', 'checkDocking'];
 
 function onStatusChange(status) {
@@ -64,21 +60,22 @@ function onStatusChange(status) {
     const el = document.getElementById(id);
     if (!el) { return; }
     if (isOK) {
-      el.checked  = true;   // auto-check
-      el.disabled = true;   // lock — can't uncheck a mandatory item when OK
+      el.checked  = true;
+      el.disabled = true;
     } else {
-      el.disabled = false;  // unlock — user can edit freely for pending/issue
+      el.disabled = false;
     }
   });
 }
 
+// ─── Form renderers ───────────────────────────────────────────────────────────
+
 function _renderDeskForm(itemId, d) {
-  const locked = d.status === 'inspected'; // mandatory items lock when OK
+  const locked = d.status === 'inspected';
   return `
     <input type="hidden" id="currentItemId" value="${itemId}">
     <input type="hidden" id="currentItemType" value="Desk">
 
-    <!-- Equipment Checklist -->
     <div class="checklist-section">
       <h3>⚡ Equipment Checklist</h3>
       <p class="checklist-hint">Mandatory items lock automatically when status is set to OK.</p>
@@ -110,7 +107,6 @@ function _renderDeskForm(itemId, d) {
       </div>
     </div>
 
-    <!-- Equipment Details -->
     <div class="checklist-section">
       <h3>📋 Equipment Details</h3>
       <div class="form-group">
@@ -136,7 +132,6 @@ function _renderDeskForm(itemId, d) {
       </div>
     </div>
 
-    <!-- Status & Notes -->
     <div class="checklist-section">
       <h3>📝 Status & Notes</h3>
       <div class="form-group">
@@ -156,7 +151,6 @@ function _renderMeetingRoomForm(itemId, d) {
     <input type="hidden" id="currentItemId" value="${itemId}">
     <input type="hidden" id="currentItemType" value="MeetingRoom">
 
-    <!-- AV Equipment Checklist -->
     <div class="checklist-section">
       <h3>📺 AV Equipment</h3>
       <div class="checkbox-grid">
@@ -175,7 +169,6 @@ function _renderMeetingRoomForm(itemId, d) {
       </div>
     </div>
 
-    <!-- Room Details -->
     <div class="checklist-section">
       <h3>📋 Room Details</h3>
       <div class="form-group">
@@ -188,7 +181,6 @@ function _renderMeetingRoomForm(itemId, d) {
       </div>
     </div>
 
-    <!-- Status & Notes -->
     <div class="checklist-section">
       <h3>📝 Status & Notes</h3>
       <div class="form-group">
@@ -208,7 +200,6 @@ function _renderServerRoomForm(itemId, d) {
     <input type="hidden" id="currentItemId" value="${itemId}">
     <input type="hidden" id="currentItemType" value="ServerRoom">
 
-    <!-- Status & Notes -->
     <div class="checklist-section">
       <h3>📝 Notes</h3>
       <div class="form-group">
@@ -226,15 +217,14 @@ function _renderServerRoomForm(itemId, d) {
 // ─── Main public functions ────────────────────────────────────────────────────
 
 function openInspectionModal(itemId) {
-  const modal     = document.getElementById('deskModal');
+  const modal      = document.getElementById('deskModal');
   const modalTitle = document.getElementById('modalTitle');
   const modalBody  = document.getElementById('modalBody');
 
   const itemData = desksData[itemId] || {};
-  const item     = currentFloor.desks.find(d => d.id === itemId);
+  const item     = currentFloor.desks.find(d => d.number === itemId);
   const itemType = item?.type || 'Desk';
 
-  // Set title by type
   if (itemType === 'MeetingRoom') {
     modalTitle.textContent = `Inspecting Meeting Room: ${item?.number || itemId}`;
   } else if (itemType === 'ServerRoom') {
@@ -243,7 +233,6 @@ function openInspectionModal(itemId) {
     modalTitle.textContent = `Inspecting: ${item?.number || itemId}`;
   }
 
-  // Render form by type
   if (itemType === 'MeetingRoom') {
     modalBody.innerHTML = _renderMeetingRoomForm(itemId, itemData);
   } else if (itemType === 'ServerRoom') {
@@ -264,7 +253,7 @@ function saveInspectionData() {
   const itemType = document.getElementById('currentItemType')?.value;
 
   if (!itemId) {
-    // Bulk edit mode (saveDeskData legacy path — bulk modal has no currentItemId)
+    // ── Bulk edit path ────────────────────────────────────────────────────────
     const bulkData = {
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedBy: currentUser.email,
@@ -274,8 +263,7 @@ function saveInspectionData() {
     const dock        = document.getElementById('bulkDock')?.value;
     const rightScreen = document.getElementById('bulkRightScreen')?.value;
     const remarks     = document.getElementById('bulkRemarks')?.value;
-
-    const bulkStatus = document.getElementById('bulkStatus')?.value;
+    const bulkStatus  = document.getElementById('bulkStatus')?.value;
 
     if (bulkStatus)  bulkData.status      = bulkStatus;
     if (leftScreen)  bulkData.leftScreen  = leftScreen;
@@ -283,7 +271,6 @@ function saveInspectionData() {
     if (rightScreen) bulkData.rightScreen = rightScreen;
     if (remarks)     bulkData.remarks     = remarks;
 
-    // Only write checkbox states if user explicitly enabled the checklist toggle
     const applyChecks = document.getElementById('bulkApplyChecks')?.checked;
     if (applyChecks) {
       bulkData.checkPower    = document.getElementById('bulkCheckPower')?.checked    ?? false;
@@ -296,16 +283,23 @@ function saveInspectionData() {
       bulkData.checkMouse    = document.getElementById('bulkCheckMouse')?.checked    ?? false;
     }
 
+    // Capture old data before modifying desksData
+    const oldDataMap = {};
+    selectedDesks.forEach(id => { oldDataMap[id] = Object.assign({}, desksData[id] || {}); });
+
     const batch = db.batch();
     selectedDesks.forEach(id => {
-      const ref = db.collection('desks').doc(id);
+      const ref = db.collection('inspections').doc(id);
       batch.set(ref, bulkData, { merge: true });
       desksData[id] = { ...desksData[id], ...bulkData };
     });
 
     batch.commit()
       .then(() => {
-        console.log('✅ Bulk updated');
+        // Write history for all affected desks
+        const deskArray = Array.from(selectedDesks);
+        writeBulkHistoryEntries(deskArray, function(id) { return oldDataMap[id]; }, bulkData, 'bulk_detail');
+
         closeModal();
         renderFloorPlan();
         updateStats();
@@ -316,7 +310,10 @@ function saveInspectionData() {
     return;
   }
 
-  // Single item save — branch by type
+  // ── Single item save ──────────────────────────────────────────────────────
+  // Capture state before overwriting
+  const oldData = Object.assign({}, desksData[itemId] || {});
+
   let data = {
     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     updatedBy: currentUser.email,
@@ -342,20 +339,21 @@ function saveInspectionData() {
   } else if (itemType === 'MeetingRoom') {
     data = {
       ...data,
-      tvSize:         document.getElementById('meetingTvSize').value,
-      capacity:       document.getElementById('meetingCapacity').value,
+      tvSize:          document.getElementById('meetingTvSize').value,
+      capacity:        document.getElementById('meetingCapacity').value,
       checkMic:        document.getElementById('checkMic').checked,
       checkSpeakers:   document.getElementById('checkSpeakers').checked,
       checkCamera:     document.getElementById('checkCamera').checked,
       checkWhiteboard: document.getElementById('checkWhiteboard').checked,
     };
   }
-  // ServerRoom: just status + remarks (already in data)
 
-  db.collection('desks').doc(itemId).set(data, { merge: true })
+  db.collection('inspections').doc(itemId).set(data, { merge: true })
     .then(() => {
       desksData[itemId] = data;
-      console.log('✅ Saved:', itemType, itemId);
+      // Write history entry (fire-and-forget)
+      writeHistoryEntry(itemId, oldData, data, 'save');
+
       closeModal();
       renderFloorPlan();
       updateStats();
@@ -367,7 +365,5 @@ function saveInspectionData() {
 // Backdrop close
 window.onclick = function(event) {
   const modal = document.getElementById('deskModal');
-  if (event.target === modal) {
-    closeModal();
-  }
+  if (event.target === modal) { closeModal(); }
 };

@@ -1,7 +1,8 @@
 // bulk-edit.js
 // Bulk selection, bulk edit modal, drag-to-select
 // Depends on globals: bulkModeActive, bulkEditMode, selectedDesks, desksData, currentUser, db
-// Calls: renderFloorPlan(), updateStats(), closeModal()
+// Calls: renderFloorPlan(), updateStats(), updateDashboard(), closeModal()
+// Calls: writeBulkHistoryEntries() from history.js
 
         // Bulk Selection
         function toggleBulkMode() {
@@ -46,16 +47,9 @@
         }
 
         // Drag Selection
-        // Coordinates divided by currentZoom: selectionBox is a child of the
-        // scaled #floorPlan element, so unscaled space coords are required.
         function setupDragSelection() {
             const floorPlan = document.getElementById('floorPlan');
 
-            // GUARD: event listeners live on the floorPlan element itself,
-            // not its children, so they survive innerHTML clears.
-            // Without this guard, every renderFloorPlan() call stacks a new
-            // set of mousedown/mousemove listeners — one drag then creates N
-            // selection boxes simultaneously (one per stacked listener).
             if (floorPlan.dataset.dragSelectReady) { return; }
             floorPlan.dataset.dragSelectReady = 'true';
 
@@ -84,19 +78,17 @@
                 const rect = floorPlan.getBoundingClientRect();
                 const currentX = (e.clientX - rect.left) / currentZoom;
                 const currentY = (e.clientY - rect.top)  / currentZoom;
-                const width = Math.abs(currentX - selectionStart.x);
+                const width  = Math.abs(currentX - selectionStart.x);
                 const height = Math.abs(currentY - selectionStart.y);
-                const left = Math.min(currentX, selectionStart.x);
-                const top = Math.min(currentY, selectionStart.y);
+                const left   = Math.min(currentX, selectionStart.x);
+                const top    = Math.min(currentY, selectionStart.y);
                 
-                selectionBox.style.width = width + 'px';
+                selectionBox.style.width  = width  + 'px';
                 selectionBox.style.height = height + 'px';
-                selectionBox.style.left = left + 'px';
-                selectionBox.style.top = top + 'px';
+                selectionBox.style.left   = left   + 'px';
+                selectionBox.style.top    = top    + 'px';
             });
 
-            // mouseup on document — fires even when mouse is released
-            // outside the floor plan boundary (floorPlan.mouseup would miss it).
             document.addEventListener('mouseup', (e) => {
                 if (!isDragging) return;
                 
@@ -104,16 +96,14 @@
                     const rect = selectionBox.getBoundingClientRect();
                     
                     document.querySelectorAll('.desk-marker').forEach(marker => {
-                        const markerRect = marker.getBoundingClientRect();
-                        const markerCenterX = markerRect.left + markerRect.width / 2;
-                        const markerCenterY = markerRect.top + markerRect.height / 2;
+                        const markerRect    = marker.getBoundingClientRect();
+                        const markerCenterX = markerRect.left + markerRect.width  / 2;
+                        const markerCenterY = markerRect.top  + markerRect.height / 2;
                         
                         if (markerCenterX >= rect.left && markerCenterX <= rect.right &&
-                            markerCenterY >= rect.top && markerCenterY <= rect.bottom) {
+                            markerCenterY >= rect.top  && markerCenterY <= rect.bottom) {
                             const deskId = marker.dataset.deskId;
-                            if (!selectedDesks.has(deskId)) {
-                                toggleDeskSelection(deskId);
-                            }
+                            if (!selectedDesks.has(deskId)) { toggleDeskSelection(deskId); }
                         }
                     });
                     
@@ -121,32 +111,48 @@
                     selectionBox = null;
                 }
                 
-                isDragging = false;
+                isDragging     = false;
                 selectionStart = null;
             });
         }
 
-        // Bulk Actions
+        // ── Bulk Actions ──────────────────────────────────────────────────────────
+
         function markSelectedAs(status) {
             if (selectedDesks.size === 0) {
                 alert('No desks selected');
                 return;
             }
-            
+
+            // Capture old data BEFORE modifying desksData
+            const oldDataMap = {};
+            selectedDesks.forEach(deskId => {
+                oldDataMap[deskId] = Object.assign({}, desksData[deskId] || {});
+            });
+
+            const newData = {
+                status:    status,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedBy: currentUser.email
+            };
+
             const batch = db.batch();
             selectedDesks.forEach(deskId => {
-                const deskRef = db.collection('desks').doc(deskId);
-                batch.set(deskRef, {
-                    status: status,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    updatedBy: currentUser.email
-                }, { merge: true });
-                
+                const deskRef = db.collection('inspections').doc(deskId);
+                batch.set(deskRef, newData, { merge: true });
                 desksData[deskId] = { ...desksData[deskId], status };
             });
             
             batch.commit().then(() => {
-                console.log('✅ Updated', selectedDesks.size, 'desks');
+                // Write history for all marked desks (fire-and-forget)
+                const deskArray = Array.from(selectedDesks);
+                writeBulkHistoryEntries(
+                    deskArray,
+                    function(id) { return oldDataMap[id]; },
+                    { status: status },
+                    'bulk_status'
+                );
+
                 renderFloorPlan();
                 updateStats();
                 updateDashboard();
@@ -162,14 +168,13 @@
                 return;
             }
             
-            const modal = document.getElementById('deskModal');
+            const modal      = document.getElementById('deskModal');
             const modalTitle = document.getElementById('modalTitle');
-            const modalBody = document.getElementById('modalBody');
+            const modalBody  = document.getElementById('modalBody');
             
             modalTitle.textContent = `Bulk Edit ${selectedDesks.size} Desks`;
             
             modalBody.innerHTML = `
-                <!-- Equipment Checklist -->
                 <div class="checklist-section">
                     <div class="bulk-check-header">
                         <h3>&#9889; Equipment Checklist</h3>
@@ -180,34 +185,17 @@
                     </div>
                     <p class="bulk-check-hint">Enable the toggle above to set equipment state for all selected desks.</p>
                     <div class="checkbox-grid bulk-checks-disabled" id="bulkCheckGrid">
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="bulkCheckPower"    disabled><label for="bulkCheckPower">Power</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="bulkCheckLAN"      disabled><label for="bulkCheckLAN">LAN</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="bulkCheckMon1"     disabled><label for="bulkCheckMon1">Mon 1</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="bulkCheckMon2"     disabled><label for="bulkCheckMon2">Mon 2</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="bulkCheckTBT"      disabled><label for="bulkCheckTBT">TBT</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="bulkCheckKeyboard" disabled><label for="bulkCheckKeyboard">Keyboard</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="bulkCheckDocking"  disabled><label for="bulkCheckDocking">Docking</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="bulkCheckMouse"    disabled><label for="bulkCheckMouse">Mouse</label>
-                        </div>
+                        <div class="checkbox-item"><input type="checkbox" id="bulkCheckPower"    disabled><label for="bulkCheckPower">Power</label></div>
+                        <div class="checkbox-item"><input type="checkbox" id="bulkCheckLAN"      disabled><label for="bulkCheckLAN">LAN</label></div>
+                        <div class="checkbox-item"><input type="checkbox" id="bulkCheckMon1"     disabled><label for="bulkCheckMon1">Mon 1</label></div>
+                        <div class="checkbox-item"><input type="checkbox" id="bulkCheckMon2"     disabled><label for="bulkCheckMon2">Mon 2</label></div>
+                        <div class="checkbox-item"><input type="checkbox" id="bulkCheckTBT"      disabled><label for="bulkCheckTBT">TBT</label></div>
+                        <div class="checkbox-item"><input type="checkbox" id="bulkCheckKeyboard" disabled><label for="bulkCheckKeyboard">Keyboard</label></div>
+                        <div class="checkbox-item"><input type="checkbox" id="bulkCheckDocking"  disabled><label for="bulkCheckDocking">Docking</label></div>
+                        <div class="checkbox-item"><input type="checkbox" id="bulkCheckMouse"    disabled><label for="bulkCheckMouse">Mouse</label></div>
                     </div>
                 </div>
 
-                <!-- Equipment Details -->
                 <div class="checklist-section">
                     <h3>&#128203; Equipment Details</h3>
                     <div class="form-group">
@@ -233,7 +221,6 @@
                     </div>
                 </div>
 
-                <!-- Status & Notes -->
                 <div class="checklist-section">
                     <h3>&#128221; Status &amp; Notes</h3>
                     <div class="form-group">
@@ -255,8 +242,6 @@
             modal.style.display = 'block';
         }
 
-
-        // Enable/disable bulk checklist when toggle is switched
         function toggleBulkCheckboxes(enabled) {
             var grid = document.getElementById('bulkCheckGrid');
             if (!grid) { return; }
@@ -270,40 +255,30 @@
             }
         }
 
-        // Auto-check mandatory items when OK status is selected in bulk mode
         function onBulkStatusChange(status) {
             if (status !== 'inspected') { return; }
-            
-            // Enable the "Apply to all" toggle so checkboxes become active
             var applyToggle = document.getElementById('bulkApplyChecks');
             if (applyToggle && !applyToggle.checked) {
                 applyToggle.checked = true;
                 toggleBulkCheckboxes(true);
             }
-            
-            // Auto-check mandatory items (not Mouse/Keyboard — those are optional)
-            var mandatoryBulk = ['bulkCheckPower', 'bulkCheckLAN', 'bulkCheckMon1', 'bulkCheckMon2', 'bulkCheckTBT', 'bulkCheckDocking'];
+            var mandatoryBulk = ['bulkCheckPower','bulkCheckLAN','bulkCheckMon1','bulkCheckMon2','bulkCheckTBT','bulkCheckDocking'];
             mandatoryBulk.forEach(function(id) {
                 var el = document.getElementById(id);
                 if (el) { el.checked = true; }
             });
         }
 
-        // Save All (bulk context)
         function saveAll() {
             alert('All changes are automatically saved! ✅');
         }
 
-        // ========================================
-        // BULK EDIT MODE FUNCTIONS
-        // ========================================
+        // ── Legacy bulk edit mode (secondary drag system) ─────────────────────
+
         function toggleBulkEdit() {
             bulkEditMode = !bulkEditMode;
             const btn = document.getElementById('bulkEditBtn');
             const bar = document.getElementById('bulkActionsBar');
-            
-            console.log('🔄 Bulk edit mode toggled to:', bulkEditMode);
-            
             if (bulkEditMode) {
                 btn.style.backgroundColor = '#ff6b35';
                 btn.style.color = 'white';
@@ -321,7 +296,6 @@
         function clearBulkSelection() {
             selectedDesks.clear();
             updateBulkCounter();
-            
             document.querySelectorAll('.desk-cell.selected').forEach(desk => {
                 desk.classList.remove('selected');
             });
@@ -337,17 +311,10 @@
         
         function initializeDragToSelect() {
             const floorPlan = document.getElementById('floorPlanContainer');
-            if (!floorPlan) {
-                console.error('❌ Floor plan container not found');
-                return;
-            }
-            
-            console.log('✅ Initializing drag-to-select');
-            
+            if (!floorPlan) { return; }
             floorPlan.addEventListener('mousedown', handleBulkDragStart);
             document.addEventListener('mousemove', handleBulkDragMove);
             document.addEventListener('mouseup', handleBulkDragEnd);
-            
             floorPlan.addEventListener('touchstart', handleBulkTouchStart, {passive: false});
             document.addEventListener('touchmove', handleBulkTouchMove, {passive: false});
             document.addEventListener('touchend', handleBulkDragEnd);
@@ -356,11 +323,9 @@
         function removeDragToSelect() {
             const floorPlan = document.getElementById('floorPlanContainer');
             if (!floorPlan) return;
-            
             floorPlan.removeEventListener('mousedown', handleBulkDragStart);
             document.removeEventListener('mousemove', handleBulkDragMove);
             document.removeEventListener('mouseup', handleBulkDragEnd);
-            
             floorPlan.removeEventListener('touchstart', handleBulkTouchStart);
             document.removeEventListener('touchmove', handleBulkTouchMove);
             document.removeEventListener('touchend', handleBulkDragEnd);
@@ -368,111 +333,73 @@
         
         function handleBulkDragStart(e) {
             if (!bulkEditMode) return;
-            
             const target = e.target.closest('.desk-cell');
             if (!target) return;
-            
             e.preventDefault();
-            isMouseDown = true;
-            isDragging = false;
-            dragStartX = e.clientX;
-            dragStartY = e.clientY;
-            
-            console.log('🖱️ Mouse down on desk');
+            isMouseDown = true; isDragging = false;
+            dragStartX = e.clientX; dragStartY = e.clientY;
             toggleDeskInBulk(target);
         }
         
         function handleBulkTouchStart(e) {
             if (!bulkEditMode) return;
-            
             const target = e.target.closest('.desk-cell');
             if (!target) return;
-            
             e.preventDefault();
             const touch = e.touches[0];
-            isMouseDown = true;
-            isDragging = false;
-            dragStartX = touch.clientX;
-            dragStartY = touch.clientY;
-            
+            isMouseDown = true; isDragging = false;
+            dragStartX = touch.clientX; dragStartY = touch.clientY;
             toggleDeskInBulk(target);
         }
         
         function handleBulkDragMove(e) {
             if (!bulkEditMode || !isMouseDown) return;
-            
             const deltaX = Math.abs(e.clientX - dragStartX);
             const deltaY = Math.abs(e.clientY - dragStartY);
-            
-            if (!isDragging && (deltaX > 5 || deltaY > 5)) {
-                isDragging = true;
-                console.log('✅ Started drag selection');
-            }
-            
+            if (!isDragging && (deltaX > 5 || deltaY > 5)) { isDragging = true; }
             if (isDragging) {
                 const target = e.target.closest('.desk-cell');
-                if (target && !target.classList.contains('selected')) {
-                    selectDeskInBulk(target);
-                }
+                if (target && !target.classList.contains('selected')) { selectDeskInBulk(target); }
             }
         }
         
         function handleBulkTouchMove(e) {
             if (!bulkEditMode || !isMouseDown) return;
-            
             e.preventDefault();
             const touch = e.touches[0];
             const deltaX = Math.abs(touch.clientX - dragStartX);
             const deltaY = Math.abs(touch.clientY - dragStartY);
-            
-            if (!isDragging && (deltaX > 5 || deltaY > 5)) {
-                isDragging = true;
-            }
-            
+            if (!isDragging && (deltaX > 5 || deltaY > 5)) { isDragging = true; }
             if (isDragging) {
                 const element = document.elementFromPoint(touch.clientX, touch.clientY);
-                const target = element?.closest('.desk-cell');
-                if (target && !target.classList.contains('selected')) {
-                    selectDeskInBulk(target);
-                }
+                const target  = element?.closest('.desk-cell');
+                if (target && !target.classList.contains('selected')) { selectDeskInBulk(target); }
             }
         }
         
         function handleBulkDragEnd() {
-            if (isDragging) {
-                console.log('🛑 Stopped drag selection');
-            }
-            isMouseDown = false;
-            isDragging = false;
+            isMouseDown = false; isDragging = false;
         }
         
         function toggleDeskInBulk(deskElement) {
             const deskId = deskElement.dataset.deskId;
             if (!deskId) return;
-            
-            if (selectedDesks.has(deskId)) {
-                deselectDeskInBulk(deskElement);
-            } else {
-                selectDeskInBulk(deskElement);
-            }
+            if (selectedDesks.has(deskId)) { deselectDeskInBulk(deskElement); }
+            else { selectDeskInBulk(deskElement); }
         }
         
         function selectDeskInBulk(deskElement) {
             const deskId = deskElement.dataset.deskId;
             if (!deskId) return;
-            
             selectedDesks.add(deskId);
             deskElement.classList.add('selected');
             updateBulkCounter();
-            console.log('✅ Selected:', deskId);
         }
         
         function deselectDeskInBulk(deskElement) {
             const deskId = deskElement.dataset.deskId;
             if (!deskId) return;
-            
             selectedDesks.delete(deskId);
             deskElement.classList.remove('selected');
             updateBulkCounter();
-            console.log('➖ Deselected:', deskId);
         }

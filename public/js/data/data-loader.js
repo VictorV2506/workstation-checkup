@@ -45,7 +45,7 @@ async function loadFloorData() {
 // ── Desk inspection records ───────────────────────────────────
 async function loadDesksData() {
     try {
-        const snapshot = await db.collection('desks').get();
+        const snapshot = await db.collection('inspections').get();
         desksData = {};
         snapshot.docs.forEach(doc => {
             desksData[doc.id] = doc.data();
