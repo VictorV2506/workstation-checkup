@@ -147,37 +147,84 @@ function _renderDeskForm(itemId, d) {
 }
 
 function _renderMeetingRoomForm(itemId, d) {
+  const AV_STATUS_OPTIONS = ['Not Working', 'Not Present', 'Not Needed', 'Working'];
+  const CRESTRON_OPTIONS  = ['Not Working', 'Nothing', 'Cable Only', 'Bracket', 'Mounted', 'Working'];
+  const YES_NO_OPTIONS    = ['Yes', 'No'];
+
+  function _avSelect(id, savedValue) {
+    return AV_STATUS_OPTIONS.map(opt =>
+      `<option value="${opt}" ${savedValue === opt ? 'selected' : ''}>${opt}</option>`
+    ).join('');
+  }
+
+  function _crestronSelect(savedValue) {
+    return CRESTRON_OPTIONS.map(opt =>
+      `<option value="${opt}" ${savedValue === opt ? 'selected' : ''}>${opt}</option>`
+    ).join('');
+  }
+
+  function _yesNoSelect(id, savedValue) {
+    return YES_NO_OPTIONS.map(opt =>
+      `<option value="${opt}" ${savedValue === opt ? 'selected' : ''}>${opt}</option>`
+    ).join('');
+  }
+
   return `
     <input type="hidden" id="currentItemId" value="${itemId}">
     <input type="hidden" id="currentItemType" value="MeetingRoom">
 
     <div class="checklist-section">
-      <h3>📺 AV Equipment</h3>
-      <div class="checkbox-grid">
-        <div class="checkbox-item">
-          <input type="checkbox" id="checkMic"        ${d.checkMic        ? 'checked' : ''}><label for="checkMic">Mic</label>
-        </div>
-        <div class="checkbox-item">
-          <input type="checkbox" id="checkSpeakers"   ${d.checkSpeakers   ? 'checked' : ''}><label for="checkSpeakers">Speakers</label>
-        </div>
-        <div class="checkbox-item">
-          <input type="checkbox" id="checkCamera"     ${d.checkCamera     ? 'checked' : ''}><label for="checkCamera">Camera</label>
-        </div>
-        <div class="checkbox-item">
-          <input type="checkbox" id="checkWhiteboard" ${d.checkWhiteboard ? 'checked' : ''}><label for="checkWhiteboard">Whiteboard</label>
-        </div>
+      <h3>📋 Room Details</h3>
+      <div class="form-group">
+        <label>Usable for Meetings</label>
+        <select id="meetingUsable">
+          <option value="">-- Select --</option>
+          ${_yesNoSelect('meetingUsable', d.usable || '')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Remote</label>
+        <select id="meetingRemote">
+          <option value="">-- Select --</option>
+          ${_yesNoSelect('meetingRemote', d.remote || '')}
+        </select>
       </div>
     </div>
 
     <div class="checklist-section">
-      <h3>📋 Room Details</h3>
+      <h3>📺 AV Equipment Status</h3>
+      <div class="form-group">
+        <label>Google Meet Device</label>
+        <select id="meetingGoogleMeet">
+          <option value="">-- Select --</option>
+          ${_avSelect('meetingGoogleMeet', d.googleMeetDevice || '')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Focus Room Monitor</label>
+        <select id="meetingFocusMonitor">
+          <option value="">-- Select --</option>
+          ${_avSelect('meetingFocusMonitor', d.focusRoomMonitor || '')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Crestron Status (Room Booking Display)</label>
+        <select id="meetingCrestron">
+          <option value="">-- Select --</option>
+          ${_crestronSelect(d.crestronStatus || '')}
+        </select>
+      </div>
+    </div>
+
+    <div class="checklist-section">
+      <h3>🔧 Hardware</h3>
       <div class="form-group">
         <label>TV Size</label>
         <input type="text" id="meetingTvSize" value="${d.tvSize || ''}" placeholder="e.g., 65 inch">
       </div>
       <div class="form-group">
-        <label>Capacity</label>
-        <input type="number" id="meetingCapacity" value="${d.capacity || ''}" placeholder="e.g., 8" min="1" max="100">
+        <label>Extra AV Device (QSC / Sennheiser etc.)</label>
+        <input type="text" id="meetingExtraAV" value="${d.extraAVDevice || ''}" placeholder="e.g., QSC amplifier">
       </div>
     </div>
 
@@ -339,12 +386,13 @@ function saveInspectionData() {
   } else if (itemType === 'MeetingRoom') {
     data = {
       ...data,
-      tvSize:          document.getElementById('meetingTvSize').value,
-      capacity:        document.getElementById('meetingCapacity').value,
-      checkMic:        document.getElementById('checkMic').checked,
-      checkSpeakers:   document.getElementById('checkSpeakers').checked,
-      checkCamera:     document.getElementById('checkCamera').checked,
-      checkWhiteboard: document.getElementById('checkWhiteboard').checked,
+      usable:           document.getElementById('meetingUsable').value,
+      remote:           document.getElementById('meetingRemote').value,
+      googleMeetDevice: document.getElementById('meetingGoogleMeet').value,
+      focusRoomMonitor: document.getElementById('meetingFocusMonitor').value,
+      crestronStatus:   document.getElementById('meetingCrestron').value,
+      tvSize:           document.getElementById('meetingTvSize').value,
+      extraAVDevice:    document.getElementById('meetingExtraAV').value,
     };
   }
 

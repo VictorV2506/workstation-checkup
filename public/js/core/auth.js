@@ -27,6 +27,22 @@ auth.onAuthStateChanged(function(user) {
 
     if (user) {
         currentUser = user;
+                // Check if user is admin
+                checkAdminStatus(user.email).then(function(adminStatus) {
+                    isAdmin = adminStatus;
+                    console.log('Admin status:', isAdmin);
+                    
+                    // Show/hide admin panel based on permission
+                    if (isAdmin) {
+                        showAdminPanel();
+                    } else {
+                        hideAdminPanel();
+                    }
+                });
+                
+                // Track user login in Firestore (for user management)
+                logUserLogin(user);
+        
         if (loginScreen)  { loginScreen.style.display  = 'none'; }
         if (appContainer) { appContainer.style.display = 'block'; }
         if (userNameEl)   { userNameEl.textContent      = user.displayName || ''; }
@@ -53,3 +69,49 @@ function signInWithGoogle() {
 function logout() {
     auth.signOut();
 }
+// Check if user email exists in admins collection
+function checkAdminStatus(email) {
+    return db.collection('admins').doc(email).get()
+        .then(function(doc) {
+            return doc.exists;
+        })
+        .catch(function(error) {
+            console.error('Error checking admin status:', error);
+            return false;
+        });
+}
+
+// Log user login to users collection
+function logUserLogin(user) {
+    var userRef = db.collection('users').doc(user.email);
+    
+    userRef.set({
+        email: user.email,
+        displayName: user.displayName || '',
+        photoURL: user.photoURL || '',
+        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true })
+    .then(function() {
+        console.log('User login logged');
+    })
+    .catch(function(error) {
+        console.error('Error logging user login:', error);
+    });
+}
+
+// Show admin panel UI (will implement in Phase 2)
+function showAdminPanel() {
+    var adminToggleBtn = document.getElementById('adminToggleBtn');
+    if (adminToggleBtn) {
+        adminToggleBtn.style.display = 'block';
+    }
+}
+
+// Hide admin panel UI
+function hideAdminPanel() {
+    var adminPanel = document.getElementById('adminPanel');
+    if (adminPanel) {
+        adminPanel.style.display = 'none';
+    }
+}
+

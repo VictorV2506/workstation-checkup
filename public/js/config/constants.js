@@ -23,3 +23,4 @@ const dockingStations = [
 const MIN_ZOOM  = 0.1;
 const MAX_ZOOM  = 3;
 const ZOOM_STEP = 0.2;
+window.TOQAN_API_KEY = 'using-deno-proxy';

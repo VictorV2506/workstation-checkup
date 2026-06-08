@@ -7,7 +7,8 @@
 
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="admin-styles.css">
+   <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -38,7 +39,9 @@
     <script src="js/features/dashboard.js"></script>
     <script src="js/features/map-interactions.js"></script>
     <script src="js/features/bulk-edit.js"></script>
+    <script src="js/features/chat.js"></script>
     <script src="js/features/floor-renderer.js"></script>
+    <script src="js/features/admin-panel.js"></script>
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -311,6 +314,60 @@
             </div>
         </div>
 
+<!-- Floating toggle button -->
+<button class="chat-toggle-btn" id="chatToggleBtn" onclick="toggleChat()"
+        title="Open Workstation Assistant" aria-label="Open AI assistant">
+    <span class="chat-btn-icon">&#129302;</span>
+    <span class="chat-btn-label">Assistant</span>
+</button>
+
+<!-- Chat panel -->
+<div class="chat-panel" id="chatPanel" style="display:none;" role="dialog"
+     aria-label="Workstation AI Assistant">
+
+    <!-- Header -->
+    <div class="chat-header">
+        <div class="chat-header-info">
+            <span class="chat-header-icon">&#129302;</span>
+            <div>
+                <div class="chat-header-title">Workstation Assistant</div>
+                <div class="chat-header-sub">Powered by Sticks and Stones</div>
+            </div>
+        </div>
+        <div class="chat-header-actions">
+            <button class="chat-icon-btn" onclick="clearChat()" title="New conversation">&#128260;</button>
+            <button class="chat-icon-btn" onclick="toggleChat()" title="Close">&#10005;</button>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-messages" id="chatMessages">
+        <!-- Welcome message injected by clearChat() on load -->
+    </div>
+
+    <!-- Loading indicator -->
+    <div class="chat-loading" id="chatLoading" style="display:none;">
+        <span class="chat-dot"></span>
+        <span class="chat-dot"></span>
+        <span class="chat-dot"></span>
+    </div>
+
+    <!-- Input bar -->
+    <div class="chat-input-bar">
+        <textarea class="chat-input" id="chatInput"
+            placeholder="Ask about your inspection data..."
+            rows="1" maxlength="1000"></textarea>
+        <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()"
+                title="Send message">&#10148;</button>
+    </div>
+</div>
+
+
+
+
+
+
+
     </div><!-- /app-container -->
 
     <!-- ── Drill-Down Modal ── -->
@@ -360,6 +417,78 @@
         btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         panel.setAttribute('aria-hidden',  isOpen ? 'false' : 'true');
     }
+
+
     </script>
+
+<!-- Admin Panel -->
+
+
+<button id="adminToggleBtn" class="admin-toggle-btn" onclick="toggleAdminPanel()">⚙️ Admin Panel</button>
+
+
+
+<div id="adminPanel" class="admin-panel">
+    <div class="admin-panel-header">
+        <h3>🔒 Admin Panel</h3>
+        <button class="admin-close-btn" onclick="toggleAdminPanel()">×</button>
+    </div>
+    
+    <div class="admin-tabs">
+        <button class="admin-tab active" onclick="switchAdminTab('floors')">Floor Management</button>
+        <button class="admin-tab" onclick="switchAdminTab('users')">User Management</button>
+    </div>
+    
+    <div class="admin-panel-content">
+        <!-- Floor Management Tab -->
+        <div id="adminTabFloors" class="admin-tab-panel active">
+            <button class="admin-btn" onclick="startAddMarker()">➕ Add Marker</button>
+            <button class="admin-btn" onclick="exportFloorsData()">💾 Export JSON</button>
+            <button class="admin-btn" onclick="importFloorsData()">📥 Import JSON</button>
+            <input type="file" id="importFileInput" style="display:none" accept=".json">
+        </div>
+        
+        <!-- User Management Tab -->
+        <div id="adminTabUsers" class="admin-tab-panel">
+            <ul id="userList" class="user-list">
+                <li style="text-align:center; color:#999; padding:20px;">Loading users...</li>
+            </ul>
+        </div>
+    </div>
+</div>
+<!-- Add Marker Modal -->
+<div id="addMarkerModal" class="admin-modal">
+    <div class="admin-modal-content">
+        <h3 style="margin-bottom: 20px; font-size: 20px;">Add New Marker</h3>
+        
+        <div class="admin-form-group">
+            <label>Marker Type</label>
+            <select id="markerType">
+                <option value="Desk">Desk</option>
+                <option value="MeetingRoom">Meeting Room</option>
+                <option value="ServerRoom">Server Room</option>
+            </select>
+        </div>
+        
+        <div class="admin-form-group">
+            <label>Marker Name</label>
+            <input type="text" id="markerName" placeholder="e.g., Moussaka, BERE_3_01">
+        </div>
+        
+        <div class="admin-form-actions">
+            <button class="admin-btn" onclick="cancelAddMarker()">Cancel</button>
+            <button class="admin-btn" onclick="confirmAddMarker()">Next: Click on Map</button>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
 </body>
 </html>

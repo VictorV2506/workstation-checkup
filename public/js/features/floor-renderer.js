@@ -89,6 +89,18 @@ function renderFloorPlan() {
         label.textContent = item.number || item.id;
         marker.appendChild(label);
 
+
+        if (isAdmin) {
+            var deleteBtn = document.createElement('button');
+            deleteBtn.className = 'marker-delete-btn';
+            deleteBtn.innerHTML = '×';
+            deleteBtn.onclick = function(e) {
+                e.stopPropagation();
+                deleteMarker(item.id);
+            };
+            marker.appendChild(deleteBtn);
+        }
+
         if (markerClass !== 'amenity-marker') {
             marker.addEventListener('click', (function(id) {
                 return function(e) { handleDeskClick(e, id); };
@@ -114,4 +126,12 @@ function renderFloorPlan() {
     img.onload  = reveal;
     img.onerror = reveal;
     img.src = currentFloor.image_path;
+
+
+     // Handle clicks for adding markers (admin feature)
+     floorPlan.addEventListener('click', function(event) {
+        if (typeof handleMapClickForMarker === 'function') {
+            handleMapClickForMarker(event);
+        }
+    });
 }

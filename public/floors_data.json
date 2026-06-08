@@ -4950,6 +4950,13 @@
         "y": 856.19
       },
       {
+        "id": "12345678-90ab-cdef-1234-567890abcdef",
+        "number": "Moussaka",
+        "type": "MeetingRoom",
+         "x": 900,
+         "y": 460
+      },
+      {
         "id": "ae2f89e1-55bd-4033-80ba-f82593e3d386",
         "number": "BERE_3_24",
         "type": "Desk",
