@@ -5,7 +5,7 @@
 
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import admin from 'firebase-admin';
+import { jwtVerify, createRemoteJWKSet } from 'jose';
 
 const {
   TOQAN_API_KEY,
@@ -21,7 +21,9 @@ const {
 // Firebase Admin, init for ID-token verification ONLY. No service-account key needed:
 // verifyIdToken fetches Google's public keys over HTTPS and checks aud/iss against the projectId.
 // (If your runtime rejects credential-less init, swap to `jose` against the securetoken JWKS — see README.)
-admin.initializeApp({ projectId: FIREBASE_PROJECT_ID });
+const FB_JWKS = createRemoteJWKSet(new URL(
+  'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
+));
 
 const TOQAN_BASE = 'https://api.toqan.ai/api';
 const app = Fastify({ logger: true, trustProxy: true });
@@ -58,7 +60,11 @@ app.addHook('preHandler', async (req, reply) => {
 
   let decoded;
   try {
-    decoded = await admin.auth().verifyIdToken(token);
+    const { payload } = await jwtVerify(token, FB_JWKS, {
+      issuer: `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`,
+      audience: FIREBASE_PROJECT_ID,
+    });
+    decoded = payload;
   } catch {
     return reply.code(401).send({ error: 'invalid token' });
   }
@@ -79,21 +85,50 @@ app.addHook('preHandler', async (req, reply) => {
 app.get('/healthz', async () => ({ ok: true }));
 
 // ── Toqan ────────────────────────────────────────────────────────────────
-app.post('/toqan/create', async (req, reply) => {
-  const { user_message } = req.body || {};
-  return forward(reply, `${TOQAN_BASE}/create_conversation`, {
-    headers: { Authorization: `Bearer ${TOQAN_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_message }),
-  });
-});
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-app.post('/toqan/continue', async (req, reply) => {
-  const { conversation_id, user_message } = req.body || {};
-  return forward(reply, `${TOQAN_BASE}/continue_conversation`, {
-    headers: { Authorization: `Bearer ${TOQAN_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ conversation_id, user_message }),
-  });
-});
+async function pollForAnswer(conversationId, requestId) {
+  const url = `${TOQAN_BASE}/get_answer?conversation_id=${conversationId}&request_id=${requestId}`;
+  for (let i = 0; i < 30; i++) {
+    await sleep(500);
+    const r = await fetch(url, { headers: { 'x-api-key': TOQAN_API_KEY } });
+    if (r.status === 200) {
+      const d = await r.json();
+      const last = Array.isArray(d.messages) && d.messages.length ? d.messages[d.messages.length - 1] : null;
+      const text = d.answer || d.message || d.content || d.text || d.response ||
+        (last ? (last.content || last.text || last.answer) : null);
+      if (text) return { conversation_id: conversationId, message: text.replace(/<think>[\s\S]*?<\/think>/g, '').trim() };
+    }
+  }
+  throw new Error('Response timed out');
+}
+
+async function callToqan(reply, path, body) {
+  let r;
+  try {
+    r = await fetch(TOQAN_BASE + path, {
+      method: 'POST',
+      headers: { 'x-api-key': TOQAN_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch { return reply.code(502).send({ error: 'upstream unreachable' }); }
+  if (!r.ok) return reply.code(r.status).send({ error: 'Toqan API error: ' + r.status });
+  const initial = await r.json();
+  if (!initial.conversation_id || !initial.request_id) {
+    return reply.code(500).send({ error: 'Unexpected response', raw: initial });
+  }
+  try { return reply.send(await pollForAnswer(initial.conversation_id, initial.request_id)); }
+  catch (e) { return reply.code(500).send({ error: e.message }); }
+}
+
+app.post('/toqan/create', async (req, reply) =>
+  callToqan(reply, '/create_conversation', { user_message: req.body?.user_message }));
+
+app.post('/toqan/continue', async (req, reply) =>
+  callToqan(reply, '/continue_conversation', {
+    conversation_id: req.body?.conversation_id,
+    user_message: req.body?.user_message,
+  }));
 
 // ── Jira ─────────────────────────────────────────────────────────────────
 // Contract (matches the current Deno proxy the frontend calls):
