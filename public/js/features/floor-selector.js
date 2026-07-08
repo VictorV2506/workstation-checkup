@@ -34,7 +34,7 @@ function onBuildingChange() {
 
 // ── Floor dropdown ────────────────────────────────────────────
 // Sets currentFloor from floorConfigs and triggers render.
-function onFloorChange() {
+async function onFloorChange() {
     const floorId = document.getElementById('floorSelect').value;
     if (!floorId) {
         document.getElementById('floorLoading').style.display = 'flex';
@@ -44,7 +44,9 @@ function onFloorChange() {
 
     currentFloor = floorConfigs.find(f => f.id === floorId);
     if (currentFloor) {
-        console.log('\u2705 Selected floor:', currentFloor.id);
+        console.log('✅ Selected floor:', currentFloor.id);
+        await loadFloorInspections(currentFloor);
         renderFloorPlan();
     }
 }
+

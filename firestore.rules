@@ -2,39 +2,92 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Uses exists() -- cheapest check, no extra read billed.
+    // Both 'admin' and 'superadmin' docs exist in /admins, so both pass.
     function isAdmin() {
-      return request.auth != null &&
+      return isAuth() &&
              exists(/databases/$(database)/documents/admins/$(request.auth.token.email));
     }
 
+    // -------------------------------------------------------------------------
+    // admins collection
+    //
+    // Admins can add other admins and remove them.
+    // The superadmin document is immutable from the client -- read-only after
+    // it is set manually in the Firebase console.
+    //   create: allowed if caller is admin AND not trying to grant superadmin
+    //   delete: allowed if caller is admin AND target doc is not superadmin
+    //   update: allowed if caller is admin AND neither old nor new role is superadmin
+    // -------------------------------------------------------------------------
     match /admins/{email} {
-      allow read:  if request.auth != null;
-      allow write: if false;
+      allow read:   if isAuth();
+
+      allow create: if isAdmin()
+                    && request.resource.data.role != 'superadmin';
+
+      allow delete: if isAdmin()
+                    && resource.data.role != 'superadmin';
+
+      allow update: if isAdmin()
+                    && resource.data.role         != 'superadmin'
+                    && request.resource.data.role != 'superadmin';
     }
 
+    // -------------------------------------------------------------------------
+    // users collection  -- auto-populated on every login (audit log)
+    // -------------------------------------------------------------------------
     match /users/{email} {
-      allow read:  if request.auth != null;
-      allow write: if request.auth != null;
+      allow read:  if isAuth();
+      allow write: if isAuth();
     }
 
+    // -------------------------------------------------------------------------
+    // inspections
+    // -------------------------------------------------------------------------
     match /inspections/{document=**} {
-      allow read:  if request.auth != null;
-      allow write: if request.auth != null;
+      allow read:  if isAuth();
+      allow write: if isAuth();
     }
 
+    // -------------------------------------------------------------------------
+    // history  -- append-only audit trail
+    // -------------------------------------------------------------------------
     match /history/{document=**} {
-      allow read:  if request.auth != null;
-      allow write: if request.auth != null;
+      allow read:  if isAuth();
+      allow write: if isAuth();
     }
 
+    // -------------------------------------------------------------------------
+    // config
+    // -------------------------------------------------------------------------
     match /config/{docId} {
-      allow read:  if request.auth != null;
+      allow read:  if isAuth();
       allow write: if isAdmin();
     }
 
+    // -------------------------------------------------------------------------
+    // desks  (legacy collection, supplemented by inspections)
+    // -------------------------------------------------------------------------
     match /desks/{deskId} {
-      allow read:  if request.auth != null;
-      allow write: if request.auth != null;
+      allow read:  if isAuth();
+      allow write: if isAuth();
     }
+
+    // -------------------------------------------------------------------------
+    // floors  -- only admins can modify the floor map layout
+    // -------------------------------------------------------------------------
+    match /floors/{floorId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+
   }
 }

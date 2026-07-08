@@ -39,13 +39,20 @@ function renderFloorPlan() {
     var loadingEl = document.getElementById('floorLoading');
     var container = document.getElementById('floorViewer');
 
+    // Preserve zoom and scroll position if this is a re-render (not a fresh floor load).
+    // A fresh load is detected by the absence of a background image on the floor plan.
+    var isFreshLoad = !floorPlan.style.backgroundImage || floorPlan.style.backgroundImage === '';
+    var savedZoom        = currentZoom;
+    var savedScrollLeft  = container ? container.scrollLeft  : 0;
+    var savedScrollTop   = container ? container.scrollTop   : 0;
+
     // Loading spinner stays visible until image + markers are ready
     floorPlan.innerHTML = '';
     currentZoom = 1;
 
     var containerWidth = container.offsetWidth;
     var scale          = containerWidth / currentFloor.width;
-    currentZoom = scale * 0.9;
+    currentZoom = isFreshLoad ? scale * 1.2 : savedZoom;
 
     // Set dimensions now (needed for absolute marker positioning)
     floorPlan.style.width  = currentFloor.width  + 'px';
@@ -116,6 +123,14 @@ function renderFloorPlan() {
         floorPlan.appendChild(fragment);
         loadingEl.style.display = 'none';
         applyZoom();
+        // Restore scroll position on re-render; centre on fresh load
+        if (isFreshLoad) {
+            container.scrollLeft = Math.max(0, (floorPlan.offsetWidth  * currentZoom - container.offsetWidth)  / 2);
+            container.scrollTop  = Math.max(0, (floorPlan.offsetHeight * currentZoom - container.offsetHeight) / 2);
+        } else {
+            container.scrollLeft = savedScrollLeft;
+            container.scrollTop  = savedScrollTop;
+        }
         setupDragSelection();
         applyCurrentFilter();
         updateStats();

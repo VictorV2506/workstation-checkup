@@ -17,6 +17,7 @@ let isAdmin = false;
 let adminUsers = [];  // Cache of users for admin panel
 let isAddingMarker = false;
 let pendingMarker = null;
+let isEditMode = false;
 let floorConfigs  = [];
 let currentFloor  = null;
 let desksData     = {};

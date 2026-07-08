@@ -19,6 +19,8 @@
 // Runs once on page load and on every sign-in / sign-out event.
 // All getElementById calls are null-guarded: onAuthStateChanged fires
 // during intermediate OAuth states when elements may not exist yet.
+var currentUserAdminRole = '';
+
 auth.onAuthStateChanged(function(user) {
     var loginScreen  = document.getElementById('loginScreen');
     var appContainer = document.getElementById('appContainer');
@@ -48,6 +50,7 @@ auth.onAuthStateChanged(function(user) {
         if (userNameEl)   { userNameEl.textContent      = user.displayName || ''; }
         if (userPhotoEl)  { userPhotoEl.src             = user.photoURL    || ''; }
         loadFloorData();
+        loadJiraConfig();
     } else {
         currentUser = null;
         if (loginScreen)  { loginScreen.style.display  = 'flex'; }
@@ -73,13 +76,21 @@ function logout() {
 function checkAdminStatus(email) {
     return db.collection('admins').doc(email).get()
         .then(function(doc) {
-            return doc.exists;
+            if (!doc.exists) {
+                currentUserAdminRole = '';
+                return false;
+            }
+            var role = (doc.data().role || '').trim();
+            currentUserAdminRole = role;
+            return role === 'admin' || role === 'superadmin';
         })
         .catch(function(error) {
             console.error('Error checking admin status:', error);
+            currentUserAdminRole = '';
             return false;
         });
 }
+
 
 // Log user login to users collection
 function logUserLogin(user) {
@@ -109,9 +120,10 @@ function showAdminPanel() {
 
 // Hide admin panel UI
 function hideAdminPanel() {
-    var adminPanel = document.getElementById('adminPanel');
-    if (adminPanel) {
-        adminPanel.style.display = 'none';
-    }
+    var panel = document.getElementById('adminPanel');
+    var btn   = document.getElementById('adminToggleBtn');
+    if (panel) panel.style.display = 'none';
+    if (btn)   btn.style.display   = 'none';
 }
+
 

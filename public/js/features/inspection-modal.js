@@ -289,6 +289,14 @@ function openInspectionModal(itemId) {
   }
 
   modal.style.display = 'block';
+
+  var jiraBtn = document.getElementById('modalJiraBtn');
+  if (jiraBtn) {
+      jiraBtn.onclick = function() { openJiraModal(itemId); };
+  }
+
+
+
 }
 
 function closeModal() {
@@ -396,9 +404,18 @@ function saveInspectionData() {
     };
   }
 
+  // Clear stored Jira ticket when desk is marked inspected — clean slate
+  if (data.status === 'inspected') {
+    data.jiraTicket   = firebase.firestore.FieldValue.delete();
+    data.jiraTicketAt = firebase.firestore.FieldValue.delete();
+  }
+
   db.collection('inspections').doc(itemId).set(data, { merge: true })
     .then(() => {
       desksData[itemId] = data;
+      delete desksData[itemId].jiraTicket;
+      delete desksData[itemId].jiraTicketAt;
+
       // Write history entry (fire-and-forget)
       writeHistoryEntry(itemId, oldData, data, 'save');
 

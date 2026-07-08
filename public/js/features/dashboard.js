@@ -44,7 +44,9 @@
                 if (oc.indexOf("'" + tabName + "'") !== -1) { t.classList.add('active'); }
             });
             document.getElementById(tabName + 'Tab').classList.add('active');
-            if (tabName === 'dashboard') { updateDashboard(); }
+            if (tabName === 'dashboard') {
+                loadMissingInspections().then(function() { updateDashboard(); });
+            }
             if (tabName === 'history')   { loadHistory(30); }
         }
 
@@ -154,7 +156,16 @@
             if (rows.length === 0) {
                 bodyEl.innerHTML = '<p class="drill-empty">No desks match this filter.</p>';
             } else {
+                var jiraBtn = '';
+                if (filter === 'issue' && typeof openMasterJiraModal === 'function') {
+                    jiraBtn = '<div style="margin-bottom:16px;display:flex;justify-content:flex-end;">' +
+                        '<button onclick="openMasterJiraModal()" style="background:#667eea;color:#fff;border:none;' +
+                        'padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">' +
+                        '\uD83C\uDFAB Create Jira Tickets</button></div>';
+                }
+    
                 var rowsHtml = rows.map(function(r) {
+    
                     var goClick = 'navigateToDesk(\'' + r.id + '\',\'' + r.building + '\',\'' + r.floorId + '\')';
                     return '<tr>' +
                         '<td class="dd-desk-id">' + r.id + '</td>' +
@@ -164,8 +175,12 @@
                         '<td><button class="btn-go" onclick="' + goClick + '">Go &#8594;</button></td>' +
                         '</tr>';
                 }).join('');
-                bodyEl.innerHTML =
+
+
+
+                bodyEl.innerHTML = jiraBtn +
                     '<table class="drill-table">' +
+
                     '<thead><tr><th>Desk ID</th><th>Building</th><th>Floor</th><th>Status</th><th></th></tr></thead>' +
                     '<tbody>' + rowsHtml + '</tbody>' +
                     '</table>';

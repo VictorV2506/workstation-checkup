@@ -16,6 +16,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  
+
 
     <!-- App Config -->
     <script src="js/config/firebase-config.js"></script>
@@ -42,6 +44,8 @@
     <script src="js/features/chat.js"></script>
     <script src="js/features/floor-renderer.js"></script>
     <script src="js/features/admin-panel.js"></script>
+    <script src="js/features/jira.js"></script>
+
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -152,6 +156,13 @@
                         <span class="tbtn-icon">&#128202;</span>
                         <span class="tbtn-label">Stats</span>
                     </button>
+                    <button class="toolbar-btn"
+        onclick="openBulkJiraModal()"
+        title="Create Jira tickets for items with issues">
+    <span class="tbtn-icon">J</span>
+    <span class="tbtn-label">Jira</span>
+</button>
+
                 </div>
             </div>
 
@@ -331,7 +342,7 @@
             <span class="chat-header-icon">&#129302;</span>
             <div>
                 <div class="chat-header-title">Workstation Assistant</div>
-                <div class="chat-header-sub">Powered by Sticks and Stones</div>
+                <div class="chat-header-sub">Powered by Toqan</div>
             </div>
         </div>
         <div class="chat-header-actions">
@@ -363,64 +374,6 @@
 </div>
 
 
-
-
-
-
-
-    </div><!-- /app-container -->
-
-    <!-- ── Drill-Down Modal ── -->
-    <div class="modal" id="drillDownModal" style="display:none;">
-        <div class="modal-content modal-content--wide">
-            <div class="modal-header">
-                <h2 id="drillDownTitle">Desks</h2>
-                <button class="close-btn" onclick="closeDrillDown()">&times;</button>
-            </div>
-            <div class="modal-body modal-body--scroll" id="drillDownBody"></div>
-        </div>
-    </div>
-
-    <!-- ── Desk Details Modal ── -->
-    <div class="modal" id="deskModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle">Desk Details</h2>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
-            </div>
-            <div class="modal-body" id="modalBody"></div>
-            <div class="modal-footer">
-                <button class="secondary" onclick="closeModal()">Cancel</button>
-                <button class="primary" onclick="saveInspectionData()">Save Changes</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ── Per-Desk Timeline Modal ── -->
-    <div class="modal" id="timelineModal" style="display:none;">
-        <div class="modal-content modal-content--wide">
-            <div class="modal-header">
-                <h2 id="timelineTitle">Desk History</h2>
-                <button class="close-btn" onclick="closeTimeline()">&times;</button>
-            </div>
-            <div class="modal-body modal-body--scroll" id="timelineBody"></div>
-        </div>
-    </div>
-
-    <script>
-    function toggleStatsPanel() {
-        var panel = document.getElementById('statsPanel');
-        var btn   = document.getElementById('statsToggleBtn');
-        if (!panel || !btn) return;
-        var isOpen = panel.classList.toggle('stats-panel--open');
-        btn.classList.toggle('toolbar-btn--active', isOpen);
-        btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        panel.setAttribute('aria-hidden',  isOpen ? 'false' : 'true');
-    }
-
-
-    </script>
-
 <!-- Admin Panel -->
 
 
@@ -440,12 +393,24 @@
     </div>
     
     <div class="admin-panel-content">
+        
         <!-- Floor Management Tab -->
         <div id="adminTabFloors" class="admin-tab-panel active">
+            <button id="editModeBtn" class="admin-btn" onclick="toggleEditMode()">🔒 Enable Edit Mode</button>
             <button class="admin-btn" onclick="startAddMarker()">➕ Add Marker</button>
+            <button id="dragModeBtn" class="admin-btn" onclick="toggleDragMode()">🖐️ Drag Markers</button>
             <button class="admin-btn" onclick="exportFloorsData()">💾 Export JSON</button>
             <button class="admin-btn" onclick="importFloorsData()">📥 Import JSON</button>
             <input type="file" id="importFileInput" style="display:none" accept=".json">
+            <hr style="border:none; border-top:1px solid #e5e7eb; margin:12px 0;">
+<button class="admin-btn"
+        onclick="resetAllToPending()"
+        style="background:#dc2626; color:#fff; width:100%; margin-top:4px;">
+    ⚠️ Reset All to Pending
+</button>
+            
+
+
         </div>
         
         <!-- User Management Tab -->
@@ -481,6 +446,117 @@
         </div>
     </div>
 </div>
+
+
+
+
+    </div><!-- /app-container -->
+
+    <!-- ── Drill-Down Modal ── -->
+    <div class="modal" id="drillDownModal" style="display:none;">
+        <div class="modal-content modal-content--wide">
+            <div class="modal-header">
+                <h2 id="drillDownTitle">Desks</h2>
+                <button class="close-btn" onclick="closeDrillDown()">&times;</button>
+            </div>
+            <div class="modal-body modal-body--scroll" id="drillDownBody"></div>
+        </div>
+    </div>
+
+    <!-- ── Desk Details Modal ── -->
+    <div class="modal" id="deskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Desk Details</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer">
+                <button class="secondary" onclick="closeModal()">Cancel</button>
+                <button id="modalJiraBtn"
+                        style="background:#0052cc; color:#fff; border:none;
+                               padding:8px 16px; border-radius:6px; font-size:13px;
+                               font-weight:600; cursor:pointer;">
+                    🎫 Create Jira Ticket
+                </button>
+                <button class="primary" onclick="saveInspectionData()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Per-Desk Timeline Modal ── -->
+    <div class="modal" id="timelineModal" style="display:none;">
+        <div class="modal-content modal-content--wide">
+            <div class="modal-header">
+                <h2 id="timelineTitle">Desk History</h2>
+                <button class="close-btn" onclick="closeTimeline()">&times;</button>
+            </div>
+            <div class="modal-body modal-body--scroll" id="timelineBody"></div>
+        </div>
+    </div>
+
+    <script>
+    function toggleStatsPanel() {
+        var panel = document.getElementById('statsPanel');
+        var btn   = document.getElementById('statsToggleBtn');
+        if (!panel || !btn) return;
+        var isOpen = panel.classList.toggle('stats-panel--open');
+        btn.classList.toggle('toolbar-btn--active', isOpen);
+        btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        panel.setAttribute('aria-hidden',  isOpen ? 'false' : 'true');
+    }
+
+
+    </script>
+
+
+
+<!-- Jira Single Ticket Modal -->
+<div class="jira-modal-overlay" id="jiraSingleModal" style="display:none;" onclick="if(event.target===this)closeJiraSingleModal()">
+
+    <div class="jira-modal">
+        <h3 id="jiraSingleTitle">Create Jira Ticket</h3>
+        <div>
+            <label>Summary</label>
+            <input type="text" id="jiraSingleSummary" placeholder="Ticket summary">
+        </div>
+        <div>
+            <label>Parent Story</label>
+            <input type="text" id="jiraSingleParent" placeholder="e.g. EITOPSGLOB-12325">
+        </div>
+        <div>
+            <label>Comment <span style="font-weight:400;color:#9ca3af;">(optional)</span></label>
+            <textarea id="jiraSingleComment" placeholder="Any additional context for this ticket..."></textarea>
+        </div>
+        <p class="jira-status" id="jiraSingleStatus"></p>
+        <div class="jira-modal-footer">
+            <button class="jira-btn-secondary" onclick="closeJiraSingleModal()">Cancel</button>
+            <button class="jira-btn-primary" id="jiraSingleConfirmBtn" onclick="void(0)">Create Ticket</button>
+        </div>
+    </div>
+</div>
+
+<!-- Jira Bulk Tickets Modal -->
+<div class="jira-modal-overlay" id="jiraBulkModal" style="display:none;" onclick="if(event.target===this)closeJiraBulkModal()">
+    <div class="jira-modal">
+        <h3 id="jiraBulkTitle">Create Jira Tickets — <span id="jiraBulkCount">0</span> selected</h3>
+        <div>
+            <label>Parent Story</label>
+            <input type="text" id="jiraBulkParent" placeholder="e.g. EITOPSGLOB-12325">
+        </div>
+        <div class="jira-bulk-list" id="jiraBulkList"></div>
+        <div>
+            <label>Comment for all tickets <span style="font-weight:400;color:#9ca3af;">(optional)</span></label>
+            <textarea id="jiraBulkComment" placeholder="Applied to every ticket created in this batch..."></textarea>
+        </div>
+        <p class="jira-status" id="jiraBulkStatus"></p>
+        <div class="jira-modal-footer">
+            <button class="jira-btn-secondary" onclick="closeJiraBulkModal()">Cancel</button>
+            <button class="jira-btn-primary" id="jiraBulkConfirmBtn" onclick="submitBulkJiraTickets()">Create Tickets</button>
+        </div>
+    </div>
+</div>
+
 
 
 

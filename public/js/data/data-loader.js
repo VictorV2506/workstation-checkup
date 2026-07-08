@@ -17,28 +17,39 @@
 // ── Floor layout ──────────────────────────────────────────────
 async function loadFloorData() {
     try {
-        const response = await fetch('floors_data.json');
-        if (!response.ok) {
-            throw new Error('Failed to load floors_data.json');
-        }
-        floorConfigs = await response.json();
+        console.log('Loading floors from Firestore...');
 
-        console.log('\u2705 Loaded floors:', floorConfigs.length);
+        const snapshot = await db.collection('floors')
+            .orderBy('floor')
+            .get();
+
+        if (snapshot.empty) {
+            throw new Error('No floors found in Firestore. Has the migration been run?');
+        }
+
+        floorConfigs = [];
+        snapshot.forEach(function(doc) {
+            floorConfigs.push(doc.data());
+        });
+
+        console.log('✅ Loaded floors:', floorConfigs.length);
 
         const buildings = [...new Set(floorConfigs.map(f => f.building))].sort();
         const buildingSelect = document.getElementById('buildingSelect');
         buildingSelect.innerHTML = '<option value="">Select Building</option>';
-        buildings.forEach(building => {
+        buildings.forEach(function(building) {
             const option = document.createElement('option');
             option.value = building;
             option.textContent = `Building ${building}`;
             buildingSelect.appendChild(option);
         });
 
-        loadDesksData();
+        /*loadDesksData();*/
+        if (typeof _handleDeepLink === 'function') _handleDeepLink();
+
     } catch (error) {
         console.error('Error loading floors:', error);
-        alert('Error: ' + error.message + '\n\nMake sure floors_data.json is in the same directory');
+        alert('Error loading floor data: ' + error.message);
     }
 }
 
@@ -57,3 +68,57 @@ async function loadDesksData() {
         console.error('Error loading desks:', error);
     }
 }
+
+// ── Per-floor inspection loader ───────────────────────────
+// Called when a floor is selected. Reads only the inspection
+// records for desks on that floor. Skips any already in memory.
+async function loadFloorInspections(floor) {
+    const deskNumbers = floor.desks
+        .filter(d => d.type === 'Desk' || d.type === 'MeetingRoom' || d.type === 'ServerRoom')
+        .map(d => d.number);
+
+    const missing = deskNumbers.filter(n => !(n in desksData));
+
+    if (missing.length === 0) {
+        console.log('✓ Already cached:', floor.id);
+        return;
+    }
+
+    const CHUNK = 30;
+    for (let i = 0; i < missing.length; i += CHUNK) {
+        const chunk = missing.slice(i, i + CHUNK);
+        const snap = await db.collection('inspections')
+            .where('__name__', 'in', chunk)
+            .get();
+        snap.forEach(doc => { desksData[doc.id] = doc.data(); });
+    }
+
+    console.log('✓ Loaded', missing.length, 'records for', floor.id);
+    updateStats();
+    updateDashboard();
+}
+// Loads inspections for any desk not yet in desksData.
+// Called when dashboard tab opens. Subsequent calls are instant (no-ops).
+async function loadMissingInspections() {
+    var missing = [];
+    floorConfigs.forEach(function(floor) {
+        floor.desks.forEach(function(desk) {
+            if (!(desk.number in desksData)) missing.push(desk.number);
+        });
+    });
+
+    if (missing.length === 0) return;
+
+    console.log('Dashboard: loading', missing.length, 'missing inspections...');
+    var CHUNK = 30;
+    for (var i = 0; i < missing.length; i += CHUNK) {
+        var chunk = missing.slice(i, i + CHUNK);
+        var snap  = await db.collection('inspections')
+            .where('__name__', 'in', chunk)
+            .get();
+        snap.forEach(function(doc) { desksData[doc.id] = doc.data(); });
+    }
+    console.log('Dashboard: inspections fully loaded.');
+}
+
+

@@ -120,8 +120,8 @@
 
 .admin-toggle-btn {
     position: fixed;
-    bottom: 20px;
-    right: 200px;
+    bottom: 28px;
+    right: 230px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
@@ -255,9 +255,9 @@
     padding: 0;
 }
 
-.desk-marker:hover .marker-delete-btn,
-.meeting-marker:hover .marker-delete-btn,
-.server-marker:hover .marker-delete-btn {
+.edit-mode .desk-marker:hover .marker-delete-btn,
+.edit-mode .meeting-marker:hover .marker-delete-btn,
+.edit-mode .server-marker:hover .marker-delete-btn {
     display: flex;
 }
 
@@ -265,4 +265,51 @@
     background: #dc2626;
     transform: scale(1.1);
 }
+
+/* Edit mode visual indicator */
+.edit-mode {
+    outline: 3px dashed #ef4444;
+    outline-offset: -3px;
+}
+
+.edit-mode::before {
+    content: '⚠️ EDIT MODE ACTIVE';
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ef4444;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* ── Drag Mode ─────────────────────────────────────── */
+#dragModeBtn.drag-active {
+    background: #f59e0b;
+    color: white;
+    border-color: #d97706;
+}
+
+/* All markers get grab cursor when drag mode is on */
+.drag-mode-active .desk-marker,
+.drag-mode-active .meeting-marker,
+.drag-mode-active .server-marker {
+    cursor: grab;
+}
+
+/* The marker currently being dragged */
+.marker-dragging {
+    cursor: grabbing !important;
+    opacity: 0.82;
+    z-index: 999;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+    transition: none !important; /* disable CSS transition while dragging for responsiveness */
+}
+
+
 

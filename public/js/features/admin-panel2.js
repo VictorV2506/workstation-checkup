@@ -1,11 +1,4 @@
 // Admin Panel Management
-var isDragMode          = false;
-var _drag               = null;   // { marker, number, origX, origY, startMX, startMY, currentX, currentY, moved }
-var _dragListenersReady = false;
-var _dragJustFinished   = false; 
-
-
-
 
 function toggleAdminPanel() {
     var panel = document.getElementById('adminPanel');
@@ -95,7 +88,6 @@ function confirmAddMarker() {
 }
 
 function handleMapClickForMarker(event) {
-    if (isDragMode) return; 
     if (!isAddingMarker || !pendingMarker) return;
     
     // Get click coordinates relative to floor plan
@@ -209,161 +201,9 @@ function toggleEditMode() {
             pendingMarker = null;
             document.body.style.cursor = 'default';
         }
-
-        if (isDragMode) {
-            isDragMode = false;
-            var dragBtn = document.getElementById('dragModeBtn');
-            if (dragBtn) {
-                dragBtn.textContent = '🖐️ Drag Markers';
-                dragBtn.classList.remove('drag-active');
-            }
-            if (floorPlan) floorPlan.classList.remove('drag-mode-active');
-            if (_drag) _cancelDrag();
-        }
-
-
         console.log('✓ Edit mode disabled');
     }
 }
-
-// ── Drag Mode ──────────────────────────────────────────────
-function toggleDragMode() {
-    if (!isEditMode) {
-        alert('Enable Edit Mode first before dragging markers.');
-        return;
-    }
-    // Lazy-init: attach listeners once, the first time drag mode is used
-    if (!_dragListenersReady) {
-        _initDragListeners();
-        _dragListenersReady = true;
-    }
-
-    isDragMode = !isDragMode;
-
-    var btn = document.getElementById('dragModeBtn');
-    var fp  = document.getElementById('floorPlan');
-
-    if (isDragMode) {
-        btn.textContent = '🖐️ Stop Dragging';
-        btn.classList.add('drag-active');
-        if (fp) fp.classList.add('drag-mode-active');
-    } else {
-        btn.textContent = '🖐️ Drag Markers';
-        btn.classList.remove('drag-active');
-        if (fp) fp.classList.remove('drag-mode-active');
-        if (_drag) _cancelDrag();
-    }
-}
-
-function _initDragListeners() {
-    // mousedown — event delegation: works even after renderFloorPlan() re-creates markers
-    document.addEventListener('mousedown', function(e) {
-        if (!isDragMode) return;
-        var marker = e.target.closest('.desk-marker, .meeting-marker, .server-marker');
-        if (!marker) return;
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        _drag = {
-            marker:  marker,
-            number:  marker.dataset.deskId,   // item.number — the human-readable ID
-            origX:   parseFloat(marker.style.left),
-            origY:   parseFloat(marker.style.top),
-            startMX: e.clientX,
-            startMY: e.clientY,
-            moved:   false
-        };
-
-        marker.classList.add('marker-dragging');
-    });
-
-    // mousemove — update marker position live while dragging
-    document.addEventListener('mousemove', function(e) {
-        if (!_drag) return;
-
-        var dx = (e.clientX - _drag.startMX) / currentZoom;
-        var dy = (e.clientY - _drag.startMY) / currentZoom;
-
-        _drag.currentX = Math.round(_drag.origX + dx);
-        _drag.currentY = Math.round(_drag.origY + dy);
-
-        _drag.marker.style.left = _drag.currentX + 'px';
-        _drag.marker.style.top  = _drag.currentY + 'px';
-        _drag.moved = true;
-    });
-
-    // mouseup — save to Firestore if position changed
-    document.addEventListener('mouseup', function(e) {
-        if (!_drag) return;
-
-        _drag.marker.classList.remove('marker-dragging');
-
-        // No movement — was a click, not a drag; do nothing
-        if (!_drag.moved) { _drag = null; return; }
-        _dragJustFinished = true;
-
-        var marker = _drag.marker;
-        var number = _drag.number;
-        var newX   = _drag.currentX;
-        var newY   = _drag.currentY;
-        var savedX = _drag.origX;
-        var savedY = _drag.origY;
-        _drag = null;
-
-        // Find desk by number (not UUID) — per app convention
-        var desk = currentFloor.desks.find(function(d) { return d.number === number; });
-        if (!desk) {
-            console.error('Drag: desk not found:', number);
-            return;
-        }
-
-        // Optimistic update in memory
-        desk.x = newX;
-        desk.y = newY;
-
-        // Persist — same pattern as handleMapClickForMarker and deleteMarker
-        db.collection('floors').doc(currentFloor.id).update({
-            desks: currentFloor.desks
-        })
-        .then(function() {
-            console.log('✓ Position saved:', number, newX, newY);
-        })
-        .catch(function(error) {
-            console.error('Drag save failed:', error);
-            // Rollback memory + visual
-            desk.x = savedX;
-            desk.y = savedY;
-            marker.style.left = savedX + 'px';
-            marker.style.top  = savedY + 'px';
-            alert('❌ Failed to save position. Try again.');
-        });
-    });
-
-    // Escape — cancel active drag and snap back
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && _drag) _cancelDrag();
-    });
-
-    document.addEventListener('click', function(e) {
-        if (!_dragJustFinished) return;
-        _dragJustFinished = false;
-        e.stopPropagation();
-        e.preventDefault();
-    }, true);
-
-}
-
-function _cancelDrag() {
-    if (!_drag) return;
-    _drag.marker.style.left = _drag.origX + 'px';
-    _drag.marker.style.top  = _drag.origY + 'px';
-    _drag.marker.classList.remove('marker-dragging');
-    _drag = null;
-}
-
-
-
 
 
 
@@ -400,7 +240,7 @@ function importFloorsData() {
 }
 
 // Load all users (from 'users' collection) and cross-reference with
-// 'admins' to determine roles. Renders sorted: superadmin > admin > user.
+// 'admins' to determine roles. Renders sorted list: superadmin > admin > user.
 function loadUsersList() {
     var userList = document.getElementById('userList');
     if (!userList) return;
@@ -415,17 +255,17 @@ function loadUsersList() {
         var usersSnap  = results[0];
         var adminsSnap = results[1];
 
-        // role map: email -> role string
+        // Build role map: email -> role string
         var roleMap = {};
         adminsSnap.forEach(function(doc) {
             roleMap[doc.id] = (doc.data().role || 'admin').trim();
         });
 
-        // user data map: email -> Firestore data
+        // Build user data map: email -> Firestore data
         var userData = {};
         usersSnap.forEach(function(doc) { userData[doc.id] = doc.data(); });
 
-        // merge both sets so admins who have not logged in yet still appear
+        // Merge both sets so admins who haven't logged in yet still appear
         var allEmails = new Set(
             Object.keys(userData).concat(Object.keys(roleMap))
         );
@@ -447,7 +287,6 @@ function loadUsersList() {
             });
         });
 
-        // sort: superadmin first, then admin, then user; alpha within each group
         users.sort(function(a, b) {
             var ro = (ORDER[a.role] !== undefined ? ORDER[a.role] : 2)
                    - (ORDER[b.role] !== undefined ? ORDER[b.role] : 2);
@@ -492,9 +331,9 @@ function _buildUserRow(user) {
     li.appendChild(avatar);
 
     // Name + email
-    var info    = document.createElement('div');
+    var info = document.createElement('div');
     info.className = 'uml-info';
-    var name    = document.createElement('div');
+    var name = document.createElement('div');
     name.className   = 'uml-name';
     name.textContent = user.displayName + (isSelf ? ' (you)' : '');
     var emailEl = document.createElement('div');
@@ -518,10 +357,205 @@ function _buildUserRow(user) {
     }
     li.appendChild(badge);
 
-    // Action button
-    // superadmin: spacer only — no button, ever
-    // admin:      Remove Admin (red)
-    // user:       Make Admin   (blue)
+    // Action button — superadmin gets a spacer only (no button, ever)
+    if (isSuperAdmin) {
+        var spacer = document.createElement('div');
+        spacer.className = 'uml-btn-spacer';
+        li.appendChild(spacer);
+    } else {
+        var btn = document.createElement('button');
+        if (isAdminRole) {
+            btn.className   = 'uml-btn uml-btn--remove';
+            btn.textContent = 'Remove Admin';
+            btn.onclick = (function(e, d) {
+                return function() { removeAdmin(e, d); };
+            })(user.email, user.displayName);
+        } else {
+            btn.className   = 'uml-btn uml-btn--make';
+            btn.textContent = 'Make Admin';
+            btn.onclick = (function(e, d) {
+                return function() { makeAdmin(e, d); };
+            })(user.email, user.displayName);
+        }
+        li.appendChild(btn);
+    }
+
+    return li;
+}
+
+// Grant admin access — creates admins/{email} with role: 'admin'.
+// Firestore rule blocks setting role: 'superadmin' from the client.
+function makeAdmin(email, displayName) {
+    if (!isAdmin) return;
+    if (!confirm(
+        'Grant admin access to ' + displayName + '?\n\n' +
+        'They will be able to manage floor maps and other users.')
+    ) return;
+
+    db.collection('admins').doc(email).set({ role: 'admin' })
+        .then(function() {
+            console.log('Admin granted to', email);
+            loadUsersList();
+        })
+        .catch(function(err) {
+            console.error('makeAdmin error:', err);
+            alert('Could not grant admin access: ' + err.message);
+        });
+}
+
+// Revoke admin access — deletes admins/{email}.
+// Firestore rule blocks deletion if resource.data.role == 'superadmin'.
+function removeAdmin(email, displayName) {
+    if (!isAdmin) return;
+
+    var isSelf = currentUser && currentUser.email === email;
+    var msg = 'Remove admin access from ' + displayName + '?';
+    if (isSelf) {
+        msg += '\n\nWarning: you are removing your own admin access.\n' +
+               'The Admin Panel will close immediately.';
+    }
+    if (!confirm(msg)) return;
+
+    db.collection('admins').doc(email).delete()
+        .then(function() {
+            console.log('Admin removed for', email);
+            if (isSelf) {
+                isAdmin              = false;
+                currentUserAdminRole = '';
+                hideAdminPanel();
+            }
+            loadUsersList();
+        })
+        .catch(function(err) {
+            console.error('removeAdmin error:', err);
+            if (err.code === 'permission-denied') {
+                alert('Cannot remove this user — they are a protected Owner.');
+            } else {
+                alert('Could not remove admin access: ' + err.message);
+            }
+        });
+}
+
+// Injects user management CSS into <head> once on first tab open.
+// Load all users (from 'users' collection) and cross-reference with
+// 'admins' to determine roles. Renders sorted list: superadmin > admin > user.
+function loadUsersList() {
+    var userList = document.getElementById('userList');
+    if (!userList) return;
+
+    _injectUserMgmtStyles();
+    userList.innerHTML = '<li class="uml-state">Loading users...</li>';
+
+    Promise.all([
+        db.collection('users').get(),
+        db.collection('admins').get()
+    ]).then(function(results) {
+        var usersSnap  = results[0];
+        var adminsSnap = results[1];
+
+        // Build role map: email -> role string
+        var roleMap = {};
+        adminsSnap.forEach(function(doc) {
+            roleMap[doc.id] = (doc.data().role || 'admin').trim();
+        });
+
+        // Build user data map: email -> Firestore data
+        var userData = {};
+        usersSnap.forEach(function(doc) { userData[doc.id] = doc.data(); });
+
+        // Merge both sets so admins who haven't logged in yet still appear
+        var allEmails = new Set(
+            Object.keys(userData).concat(Object.keys(roleMap))
+        );
+
+        if (allEmails.size === 0) {
+            userList.innerHTML = '<li class="uml-state">No users found.</li>';
+            return;
+        }
+
+        var ORDER = { superadmin: 0, admin: 1, user: 2 };
+        var users = [];
+        allEmails.forEach(function(email) {
+            var data = userData[email] || {};
+            users.push({
+                email:       email,
+                displayName: data.displayName || email,
+                photoURL:    data.photoURL    || '',
+                role:        roleMap[email]   || 'user'
+            });
+        });
+
+        users.sort(function(a, b) {
+            var ro = (ORDER[a.role] !== undefined ? ORDER[a.role] : 2)
+                   - (ORDER[b.role] !== undefined ? ORDER[b.role] : 2);
+            if (ro !== 0) return ro;
+            return a.displayName.localeCompare(b.displayName);
+        });
+
+        userList.innerHTML = '';
+        users.forEach(function(u) { userList.appendChild(_buildUserRow(u)); });
+
+    }).catch(function(err) {
+        console.error('loadUsersList error:', err);
+        userList.innerHTML =
+            '<li class="uml-state uml-state--error">Error loading users: ' +
+            err.message + '</li>';
+    });
+}
+
+function _buildUserRow(user) {
+    var isSelf       = currentUser && currentUser.email === user.email;
+    var isSuperAdmin = user.role === 'superadmin';
+    var isAdminRole  = user.role === 'admin';
+
+    var li = document.createElement('li');
+    li.className = 'uml-row' + (isSelf ? ' uml-row--self' : '');
+
+    // Avatar
+    var avatar = document.createElement('div');
+    avatar.className = 'uml-avatar';
+    if (user.photoURL) {
+        var img = document.createElement('img');
+        img.src = user.photoURL;
+        img.alt = user.displayName;
+        img.onerror = function() {
+            this.style.display = 'none';
+            avatar.textContent = (user.displayName || '?')[0].toUpperCase();
+        };
+        avatar.appendChild(img);
+    } else {
+        avatar.textContent = (user.displayName || '?')[0].toUpperCase();
+    }
+    li.appendChild(avatar);
+
+    // Name + email
+    var info = document.createElement('div');
+    info.className = 'uml-info';
+    var name = document.createElement('div');
+    name.className   = 'uml-name';
+    name.textContent = user.displayName + (isSelf ? ' (you)' : '');
+    var emailEl = document.createElement('div');
+    emailEl.className   = 'uml-email';
+    emailEl.textContent = user.email;
+    info.appendChild(name);
+    info.appendChild(emailEl);
+    li.appendChild(info);
+
+    // Role badge
+    var badge = document.createElement('span');
+    if (isSuperAdmin) {
+        badge.className   = 'uml-badge uml-badge--superadmin';
+        badge.textContent = 'Owner';
+    } else if (isAdminRole) {
+        badge.className   = 'uml-badge uml-badge--admin';
+        badge.textContent = 'Admin';
+    } else {
+        badge.className   = 'uml-badge uml-badge--user';
+        badge.textContent = 'User';
+    }
+    li.appendChild(badge);
+
+    // Action button — superadmin gets a spacer only (no button, ever)
     if (isSuperAdmin) {
         var spacer = document.createElement('div');
         spacer.className = 'uml-btn-spacer';
@@ -632,161 +666,4 @@ function _injectUserMgmtStyles() {
 }
 
 
-// =============================================================================
-// RESET ALL TO PENDING
-// =============================================================================
-//
-// Resets every inspectable item (Desk, MeetingRoom, ServerRoom) to pending.
-//
-// KEPT:    leftMonitor, rightMonitor, dock (physical hardware, does not change)
-// CLEARED: status, remarks, all check fields, all AV fields
-//
-// Uses set(..., { merge: true }) so hardware fields are untouched in Firestore.
-// Logs ONE summary entry to history (not one per desk).
-// Chunks into batches of 490 to stay under Firestore's 500-op limit.
 
-function resetAllToPending() {
-    if (!isAdmin) return;
-
-    // Build full list of inspectable items from floorConfigs (all floors)
-    if (!Array.isArray(floorConfigs) || floorConfigs.length === 0) {
-        alert('No floor data loaded. Please wait for data to load and try again.');
-        return;
-    }
-
-    var allItems = [];
-    var counts   = { Desk: 0, MeetingRoom: 0, ServerRoom: 0 };
-    var TYPES    = { Desk: true, MeetingRoom: true, ServerRoom: true };
-
-    floorConfigs.forEach(function(floor) {
-        floor.desks.forEach(function(desk) {
-            var type = desk.type || 'Desk';
-            if (!TYPES[type] || !desk.number) return;
-            allItems.push({ number: desk.number, type: type });
-            counts[type]++;
-        });
-    });
-
-    var total = allItems.length;
-    if (total === 0) {
-        alert('No inspectable items found.');
-        return;
-    }
-
-    // Two-line confirm -- clear about what is preserved
-    if (!confirm(
-        'RESET ALL ' + total + ' ITEMS TO PENDING?\n\n' +
-        '  Desks:         ' + counts.Desk        + '\n' +
-        '  Meeting Rooms: ' + counts.MeetingRoom  + '\n' +
-        '  Server Rooms:  ' + counts.ServerRoom   + '\n\n' +
-        'CLEARED: status, checkboxes, remarks, AV fields\n' +
-        'KEPT:    monitor and dock hardware records\n\n' +
-        'This cannot be undone.'
-    )) return;
-
-    var updatedBy = (currentUser ? currentUser.email : 'admin') + ' (full reset)';
-    var now       = firebase.firestore.FieldValue.serverTimestamp();
-
-    // Return the reset payload for a given item type.
-    // Hardware fields are intentionally absent -- merge leaves them untouched.
-    function _payload(type) {
-        var base = { status: 'pending', remarks: '', updatedAt: now, updatedBy: updatedBy };
-
-        if (type === 'Desk') {
-            return Object.assign({}, base, {
-                checkPower:    false,
-                checkLAN:      false,
-                checkMon1:     false,
-                checkMon2:     false,
-                checkTBT:      false,
-                checkKeyboard: false,
-                checkDocking:  false,
-                checkMouse:    false
-            });
-        }
-
-        if (type === 'MeetingRoom') {
-            return Object.assign({}, base, {
-                usable:           '',
-                remote:           '',
-                googleMeetDevice: '',
-                focusRoomMonitor: '',
-                crestronStatus:   '',
-                tvSize:           '',
-                extraAVDevice:    ''
-            });
-        }
-
-        // ServerRoom -- status + remarks only
-        return base;
-    }
-
-    // Batch writes in chunks of 490 (Firestore limit = 500 ops per batch)
-    var CHUNK      = 490;
-    var batches    = [];
-    var memUpdates = [];
-
-    for (var i = 0; i < allItems.length; i += CHUNK) {
-        var chunk = allItems.slice(i, i + CHUNK);
-        var batch = db.batch();
-        chunk.forEach(function(item) {
-            var p = _payload(item.type);
-            batch.set(db.collection('inspections').doc(item.number), p, { merge: true });
-            memUpdates.push({ number: item.number, payload: p });
-        });
-        batches.push(batch.commit());
-    }
-
-    Promise.all(batches)
-        .then(function() {
-
-            // Update desksData in memory.
-            // Object.assign order: existing data first, then reset payload.
-            // This preserves hardware fields (leftMonitor etc.) that are not
-            // in the reset payload.
-            var memNow = new Date();
-            memUpdates.forEach(function(u) {
-                desksData[u.number] = Object.assign(
-                    {},
-                    desksData[u.number] || {},
-                    u.payload,
-                    { updatedAt: memNow }   // replace sentinel with real date for memory
-                );
-            });
-
-            // ONE summary history entry -- not one per desk.
-            // deskId: 'FULL_RESET' lets clicking the history row show all past resets.
-            db.collection('history').add({
-                deskId:    'FULL_RESET',
-                action:    'full_reset',
-                changedBy: currentUser ? currentUser.email : 'admin',
-                changedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                building:  'ALL',
-                floor:     'ALL',
-                status:    'pending',
-                changes:   {},
-                summary: {
-                    totalReset:   total,
-                    desks:        counts.Desk,
-                    meetingRooms: counts.MeetingRoom,
-                    serverRooms:  counts.ServerRoom
-                }
-            }).catch(function(err) {
-                console.error('Reset history write failed:', err);
-            });
-
-            // Refresh UI
-            if (typeof renderFloorPlan === 'function' && currentFloor) renderFloorPlan();
-            if (typeof updateStats     === 'function') updateStats();
-            if (typeof updateDashboard === 'function') updateDashboard();
-
-            alert('Done. ' + total + ' items reset to pending.');
-        })
-        .catch(function(err) {
-            console.error('resetAllToPending failed:', err);
-            alert(
-                'Reset failed: ' + err.message + '\n\n' +
-                'Some items may have been updated. Refresh the page to see the current state.'
-            );
-        });
-}
