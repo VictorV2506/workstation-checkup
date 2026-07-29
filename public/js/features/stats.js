@@ -3,47 +3,83 @@
 // Depends on: currentFloor, desksData, floorConfigs (globals)
 
 function updateStats() {
-    if (!currentFloor) return;
+  if (!currentFloor) return;
 
-    var items    = currentFloor.desks;
-    var desks    = items.filter(function(d) { return !d.type || d.type === 'Desk'; });
-    var meetings = items.filter(function(d) { return d.type === 'MeetingRoom'; });
-    var servers  = items.filter(function(d) { return d.type === 'ServerRoom'; });
+  var items = currentFloor.desks;
+  var desks = items.filter(function (d) {
+    return !d.type || d.type === "Desk";
+  });
+  var meetings = items.filter(function (d) {
+    return d.type === "MeetingRoom";
+  });
+  var servers = items.filter(function (d) {
+    return d.type === "ServerRoom";
+  });
+  var printers = items.filter(function (d) {
+    return d.type === "Printer";
+  });
 
-    function counts(group) {
-        var total     = group.length;
-        var inspected = group.filter(function(d) { return desksData[d.number] && desksData[d.number].status === 'inspected'; }).length;
-        var issues    = group.filter(function(d) { return desksData[d.number] && desksData[d.number].status === 'issue'; }).length;
-        var progress  = total > 0 ? Math.round(((inspected + issues) / total) * 100) : 0;
-        return { total: total, inspected: inspected, issues: issues, progress: progress };
-    }
+  function counts(group) {
+    var total = group.length;
+    var inspected = group.filter(function (d) {
+      return desksData[d.number] && desksData[d.number].status === "inspected";
+    }).length;
+    var issues = group.filter(function (d) {
+      return desksData[d.number] && desksData[d.number].status === "issue";
+    }).length;
+    var progress =
+      total > 0 ? Math.round(((inspected + issues) / total) * 100) : 0;
+    return {
+      total: total,
+      inspected: inspected,
+      issues: issues,
+      progress: progress,
+    };
+  }
 
-    var d = counts(desks);
-    var m = counts(meetings);
-    var s = counts(servers);
+  var d = counts(desks);
+  var m = counts(meetings);
+  var s = counts(servers);
+  var p = counts(printers);
 
-    document.getElementById('deskTotal').textContent    = d.total;
-    document.getElementById('deskIssues').textContent   = d.issues;
-    document.getElementById('deskProgress').textContent = d.progress + '%';
+  document.getElementById("deskTotal").textContent = d.total;
+  document.getElementById("deskIssues").textContent = d.issues;
+  document.getElementById("deskProgress").textContent = d.progress + "%";
 
-    document.getElementById('meetingTotal').textContent    = m.total;
-    document.getElementById('meetingIssues').textContent   = m.issues;
-    document.getElementById('meetingProgress').textContent = m.progress + '%';
+  document.getElementById("meetingTotal").textContent = m.total;
+  document.getElementById("meetingIssues").textContent = m.issues;
+  document.getElementById("meetingProgress").textContent = m.progress + "%";
 
-    document.getElementById('serverTotal').textContent    = s.total;
-    document.getElementById('serverIssues').textContent   = s.issues;
-    document.getElementById('serverProgress').textContent = s.progress + '%';
+  document.getElementById("serverTotal").textContent = s.total;
+  document.getElementById("serverIssues").textContent = s.issues;
+  document.getElementById("serverProgress").textContent = s.progress + "%";
 
-    var allInspectable = 0, allInspected = 0;
-    var inspectableTypes = ['Desk', 'MeetingRoom', 'ServerRoom'];
-    floorConfigs.forEach(function(floor) {
-        floor.desks
-            .filter(function(d) { return !d.type || inspectableTypes.indexOf(d.type) !== -1; })
-            .forEach(function(d) {
-                allInspectable++;
-                if (desksData[d.number] && (desksData[d.number].status === 'inspected' || desksData[d.number].status === 'issue')) allInspected++;
-            });
-    });
-    var completion = allInspectable > 0 ? Math.round((allInspected / allInspectable) * 100) : 0;
-    document.getElementById('completionRate').textContent = completion + '%';
+  var printerTotalEl = document.getElementById("printerTotal");
+  if (printerTotalEl) {
+    printerTotalEl.textContent = p.total;
+    document.getElementById("printerIssues").textContent = p.issues;
+    document.getElementById("printerProgress").textContent = p.progress + "%";
+  }
+
+  var allInspectable = 0,
+    allInspected = 0;
+  var inspectableTypes = ["Desk", "MeetingRoom", "ServerRoom", "Printer"];
+  floorConfigs.forEach(function (floor) {
+    floor.desks
+      .filter(function (d) {
+        return !d.type || inspectableTypes.indexOf(d.type) !== -1;
+      })
+      .forEach(function (d) {
+        allInspectable++;
+        if (
+          desksData[d.number] &&
+          (desksData[d.number].status === "inspected" ||
+            desksData[d.number].status === "issue")
+        )
+          allInspected++;
+      });
+  });
+  var completion =
+    allInspectable > 0 ? Math.round((allInspected / allInspectable) * 100) : 0;
+  document.getElementById("completionRate").textContent = completion + "%";
 }

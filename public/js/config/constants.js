@@ -21,6 +21,20 @@ async function _authedFetch(url, bodyObj) {
     body: JSON.stringify(bodyObj),
   });
 }
+
+// ── Backend base (per-deployment) ─────────────────────────────
+// The chat + Jira proxies live at DIFFERENT hosts depending on where the app is served:
+//   • Firebase Hosting (public)                 → the live personal Deno proxies.
+//   • Sonic internal build (*.jet-internal.com) → same-origin server.js (no CORS).
+// Everything else (Firestore) is client-direct and needs none of this.
+// IMPORTANT: the Firebase (non-Sonic) URLs below are byte-for-byte the originals, so the
+// live app's requests are UNCHANGED. Only a Sonic-hosted build takes the same-origin branch.
+// See INFRA-STATE.md ("frontend hardcodes Deno URLs") and proxy/server.js for the routes.
+var _ON_SONIC = location.hostname.endsWith('.jet-internal.com');
+var TOQAN_CREATE_URL   = _ON_SONIC ? '/toqan/create'   : 'https://radiant-woodpecker-65.victorv2506.deno.net/create';
+var TOQAN_CONTINUE_URL = _ON_SONIC ? '/toqan/continue' : 'https://radiant-woodpecker-65.victorv2506.deno.net/continue';
+var JIRA_PROXY_URL     = _ON_SONIC ? '/jira'           : 'https://full-platypus-4956.victorv2506.deno.net';
+
 const monitorModels = [
   "Dell P2422HE (Black)",
   "Dell P2422H (Black)",

@@ -16,6 +16,9 @@ function onBuildingChange() {
     const floorSelect = document.getElementById('floorSelect');
     floorSelect.innerHTML = '<option value="">Select Floor</option>';
 
+    // Remember the floor number we're on, so switching building can carry it over.
+    const prevFloorNum = currentFloor ? currentFloor.floor : null;
+
     if (building) {
         const floors = floorConfigs
             .filter(f => f.building === building)
@@ -26,6 +29,17 @@ function onBuildingChange() {
             option.textContent = `Floor ${floor.floor}`;
             floorSelect.appendChild(option);
         });
+
+        // If the new building has the same floor number, jump straight to it
+        // instead of forcing another pick. (prevFloorNum != null so floor 0 still works.)
+        if (prevFloorNum != null) {
+            const match = floors.find(f => Number(f.floor) === Number(prevFloorNum));
+            if (match) {
+                floorSelect.value = match.id;
+                onFloorChange();   // loads + renders the carried-over floor
+                return;
+            }
+        }
     }
 
     document.getElementById('floorLoading').style.display = 'flex';

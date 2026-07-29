@@ -1,10 +1,10 @@
 // public/js/features/jira.js
 // Depends on globals: currentUser, currentFloor, desksData, floorConfigs, db
 // Config from Firestore: config/jira
-// Proxy: https://full-platypus-4956.victorv2506.deno.net
+// Proxy: JIRA_PROXY_URL (constants.js) — Deno on Firebase, same-origin /jira on Sonic
 
 var _jiraConfig = null;
-var _JIRA_PROXY = "https://full-platypus-4956.victorv2506.deno.net";
+var _JIRA_PROXY = JIRA_PROXY_URL;
 
 // ── Load config ───────────────────────────────────────────────────────────────
 function loadJiraConfig() {

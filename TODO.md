@@ -1,7 +1,10 @@
 # TODO — Workstation Checkup
 
 > Work queue. Read **CLAUDE.md** first for context. Status: `[ ]` open · `[~]` in progress · `[x]` done · `[!]` urgent
-> Last updated: **2026-07-02**. The app functions (Session 25); these are the gaps — mostly **security hardening that has NOT been started**.
+> Last updated: **2026-07-08**. The app functions (Session 25); these are the gaps — mostly **security hardening**.
+> **Infra/proxy/git/Sonic state + go-forward plan → [`INFRA-STATE.md`](INFRA-STATE.md).** Working app = Firebase +
+> **hardened** Deno (jose token-verify on both proxies). ⚠️ **Rotate the Toqan + Jira keys** (Toqan was exposed).
+> Plan: build features on Firebase+Deno → push to company git → redeploy Sonic with platform-team help.
 
 ---
 
@@ -214,3 +217,19 @@ async**; app runs on Deno. Pivoted to the **multi-office feature** (the real nex
 self-service superadmin-UI design, read the app to produce the build breakdown (P1), and chose **Firebase
 Storage** for self-service floor-plan upload (already on Blaze). Handed off to a fresh agent to build it.
 Drafted proxy still in `proxy/`.
+
+**Session 29 (2026-07-20):** De-risked and largely BUILT the Sonic path — via **Launchpad** (which the user
+CAN use; the S28 onboarding wall was the *production Scaffolder*, Launchpad is the prototype tier). Shipped
+two Sonic apps (separate Launchpad repos, not in this repo): **desk-sos** = working self-service desk→Jira
+reporting portal for Winnipeg (office selector, Zscaler-gated, no login; created real `EITOPSGLOB-12885`);
+**workstation-api** = the Deno-proxy replacement (`/jira` create-only + `/toqan/create|continue` server-polled
++ `/health`, Firebase-ID-token auth, CORS-locked, sanitised errors, egress ServiceEntry) — status **"ready",
+pending an end-to-end real-token test + app cutover**. Proved a Sonic service CAN reach Jira/Toqan (egress via
+ServiceEntry + https — resolves L35's open unknown). In THIS repo (all uncommitted): **printer item type**
+(Tier 1+2) + family "Other" dropdown, **floor carry-over** on building switch, **marker double-warning fix**,
+**dashboard A/B/C** (all-types KPIs/charts, clickable equipment cards, drill-down stored-XSS fixed). Created
+`.claude/skills/sonic-deploy/SKILL.md` + **`HANDOFF.md`**. **Open next:** (1) test `workstation-api` with a
+real Firebase token → wire `constants.js` → retire Deno + **rotate keys**; (2) clean workstation-api env cruft
++ verify auth uses Google public keys (the stray `JWT_SECRET`); (3) printer **Tier 3** (chat/jira/reset-all
+awareness); (4) desk-sos → tech-app **"reported flag"** wiring (needs a Firestore SA for desk-sos). Full state
++ next-agent prompt in **`HANDOFF.md`**.

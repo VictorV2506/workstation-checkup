@@ -26,3 +26,9 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Claude local settings (machine-specific; skills/ + launch.json stay shared)
+.claude/settings.local.json
+
+# report-portal — dead/superseded hand-rolled proxy, kept local only
+report-portal/

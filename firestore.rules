@@ -17,6 +17,15 @@ service cloud.firestore {
              exists(/databases/$(database)/documents/admins/$(request.auth.token.email));
     }
 
+    // Superadmin needs the ROLE, so this get()s the caller's /admins doc (one
+    // billed read; only evaluated on office writes, which are rare). The exists()
+    // guard avoids a null .data error when the doc is absent.
+    function isSuperAdmin() {
+      return isAuth() &&
+             exists(/databases/$(database)/documents/admins/$(request.auth.token.email)) &&
+             get(/databases/$(database)/documents/admins/$(request.auth.token.email)).data.role == 'superadmin';
+    }
+
     // -------------------------------------------------------------------------
     // admins collection
     //
@@ -79,6 +88,18 @@ service cloud.firestore {
     match /desks/{deskId} {
       allow read:  if isAuth();
       allow write: if isAuth();
+    }
+
+    // -------------------------------------------------------------------------
+    // offices  -- office registry for multi-office
+    //
+    // read:  any signed-in user (the office picker needs to list offices).
+    // write: superadmin only (create/edit/remove offices from the admin UI).
+    //        The UI is cosmetic; THIS rule is the real gate.
+    // -------------------------------------------------------------------------
+    match /offices/{officeId} {
+      allow read:  if isAuth();
+      allow write: if isSuperAdmin();
     }
 
     // -------------------------------------------------------------------------

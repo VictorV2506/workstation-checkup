@@ -1,570 +1,1182 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workstation Checkup - BER Office</title>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Workstation Checkup - BER Office</title>
 
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="admin-styles.css">
-   <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+        <link rel="stylesheet" href="styles.css" />
+        <link rel="stylesheet" href="admin-styles.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
 
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  
+        <!-- Firebase -->
+        <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
+        <!-- App Config -->
+        <script src="js/config/firebase-config.js"></script>
+        <script src="js/config/constants.js"></script>
 
-    <!-- App Config -->
-    <script src="js/config/firebase-config.js"></script>
-    <script src="js/config/constants.js"></script>
+        <!-- Core -->
+        <script src="js/core/state.js"></script>
+        <script src="js/core/auth.js"></script>
 
-    <!-- Core -->
-    <script src="js/core/state.js"></script>
-    <script src="js/core/auth.js"></script>
+        <!-- Data -->
+        <script src="js/data/data-loader.js"></script>
+        <!-- Multi-office (increment 2) -->
+        <script src="js/features/office-selector.js"></script>
 
-    <!-- Data -->
-    <script src="js/data/data-loader.js"></script>
+        <!-- Features -->
+        <script src="js/features/floor-selector.js"></script>
+        <script src="js/features/zoom.js"></script>
+        <script src="js/features/stats.js"></script>
+        <script src="js/features/filters.js"></script>
+        <script src="js/features/history.js"></script>
+        <script src="js/features/inspection-modal.js"></script>
+        <script src="js/features/desk-interactions.js"></script>
+        <script src="js/features/dashboard.js"></script>
+        <script src="js/features/map-interactions.js"></script>
+        <script src="js/features/bulk-edit.js"></script>
+        <script src="js/features/chat.js"></script>
+        <script src="js/features/floor-renderer.js"></script>
+        <script src="js/features/admin-panel.js"></script>
+        <script src="js/features/jira.js"></script>
 
-    <!-- Features -->
-    <script src="js/features/floor-selector.js"></script>
-    <script src="js/features/zoom.js"></script>
-    <script src="js/features/stats.js"></script>
-    <script src="js/features/filters.js"></script>
-    <script src="js/features/history.js"></script>
-    <script src="js/features/inspection-modal.js"></script>
-    <script src="js/features/desk-interactions.js"></script>
-    <script src="js/features/dashboard.js"></script>
-    <script src="js/features/map-interactions.js"></script>
-    <script src="js/features/bulk-edit.js"></script>
-    <script src="js/features/chat.js"></script>
-    <script src="js/features/floor-renderer.js"></script>
-    <script src="js/features/admin-panel.js"></script>
-    <script src="js/features/jira.js"></script>
-
-
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-</head>
-<body>
-
-    <!-- Login Screen -->
-    <div class="login-screen" id="loginScreen">
-        <div class="login-card">
-            <div class="login-logo">
-                <svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="32" height="32" rx="8" fill="url(#lgbg)"/>
-                    <circle cx="10" cy="11" r="3" fill="rgba(255,255,255,0.4)"/>
-                    <circle cx="22" cy="11" r="3" fill="rgba(255,255,255,0.4)"/>
-                    <circle cx="10" cy="21" r="3" fill="rgba(255,255,255,0.4)"/>
-                    <path d="M17 21l3 3 5-6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <defs>
-                        <linearGradient id="lgbg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                            <stop offset="0%" stop-color="#667eea"/>
-                            <stop offset="100%" stop-color="#764ba2"/>
-                        </linearGradient>
-                    </defs>
-                </svg>
-            </div>
-            <h1>Workstation Checkup</h1>
-            <p>Sign in with your JustEatTakeaway account</p>
-            <button class="google-btn" onclick="signInWithGoogle()">
-                <svg width="20" height="20" viewBox="0 0 20 20">
-                    <path fill="#4285F4" d="M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z"/>
-                    <path fill="#34A853" d="M13.46 15.13c-.83.59-1.96 1-3.46 1-2.64 0-4.88-1.74-5.68-4.15H1.07v2.52C2.72 17.75 6.09 20 10 20c2.7 0 4.96-.89 6.62-2.42l-3.16-2.45z"/>
-                    <path fill="#FBBC05" d="M3.99 10c0-.69.12-1.35.32-1.97V5.51H1.07A9.973 9.973 0 0 0 0 10c0 1.61.39 3.14 1.07 4.49l3.24-2.52c-.2-.62-.32-1.28-.32-1.97z"/>
-                    <path fill="#EA4335" d="M10 3.88c1.88 0 3.13.81 3.85 1.48l2.84-2.76C14.96.99 12.7 0 10 0 6.09 0 2.72 2.25 1.07 5.51l3.24 2.52C5.12 5.62 7.36 3.88 10 3.88z"/>
-                </svg>
-                Sign in with Google
-            </button>
-        </div>
-    </div>
-
-    <!-- Main App -->
-    <div class="app-container" id="appContainer">
-
-        <header class="header">
-            <div class="header-brand">
-                <svg class="header-logo" width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <rect width="32" height="32" rx="8" fill="rgba(255,255,255,0.2)"/>
-                    <circle cx="10" cy="11" r="3" fill="rgba(255,255,255,0.55)"/>
-                    <circle cx="22" cy="11" r="3" fill="rgba(255,255,255,0.55)"/>
-                    <circle cx="10" cy="21" r="3" fill="rgba(255,255,255,0.55)"/>
-                    <path d="M17 21l3 3 5-6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span class="header-title">Workstation Checkup</span>
-            </div>
-            <div class="user-info">
-                <img id="userPhoto" src="" alt="User avatar">
-                <span id="userName" class="user-name"></span>
-                <button class="logout-btn" onclick="logout()">Logout</button>
-            </div>
-        </header>
-
-        <!-- Tabs: Floor Inspection | Dashboard | History -->
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('inspect')">&#128269; Floor Inspection</div>
-            <div class="tab" onclick="switchTab('dashboard')">&#128202; Dashboard</div>
-            <div class="tab" onclick="switchTab('history')">&#128203; History</div>
-        </div>
-
-        <!-- ── Floor Inspection Tab ── -->
-        <div class="tab-content active" id="inspectTab">
-
-            <div class="map-toolbar" id="mapToolbar">
-                <div class="toolbar-group toolbar-selectors">
-                    <div class="toolbar-select-wrap">
-                        <label class="toolbar-label" for="buildingSelect">Building</label>
-                        <select id="buildingSelect" class="toolbar-select" onchange="onBuildingChange()">
-                            <option value="">Select&hellip;</option>
-                        </select>
-                    </div>
-                    <div class="toolbar-select-wrap">
-                        <label class="toolbar-label" for="floorSelect">Floor</label>
-                        <select id="floorSelect" class="toolbar-select" onchange="onFloorChange()">
-                            <option value="">Select&hellip;</option>
-                        </select>
-                    </div>
+        <!-- Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    </head>
+    <body>
+        <!-- Login Screen -->
+        <div class="login-screen" id="loginScreen">
+            <div class="login-card">
+                <div class="login-logo">
+                    <svg
+                        width="48"
+                        height="48"
+                        viewBox="0 0 32 32"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <rect width="32" height="32" rx="8" fill="url(#lgbg)" />
+                        <circle
+                            cx="10"
+                            cy="11"
+                            r="3"
+                            fill="rgba(255,255,255,0.4)"
+                        />
+                        <circle
+                            cx="22"
+                            cy="11"
+                            r="3"
+                            fill="rgba(255,255,255,0.4)"
+                        />
+                        <circle
+                            cx="10"
+                            cy="21"
+                            r="3"
+                            fill="rgba(255,255,255,0.4)"
+                        />
+                        <path
+                            d="M17 21l3 3 5-6"
+                            stroke="white"
+                            stroke-width="2.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                        <defs>
+                            <linearGradient
+                                id="lgbg"
+                                x1="0"
+                                y1="0"
+                                x2="32"
+                                y2="32"
+                                gradientUnits="userSpaceOnUse"
+                            >
+                                <stop offset="0%" stop-color="#667eea" />
+                                <stop offset="100%" stop-color="#764ba2" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
                 </div>
+                <h1>Workstation Checkup</h1>
+                <p>Sign in with your JustEatTakeaway account</p>
+                <button class="google-btn" onclick="signInWithGoogle()">
+                    <svg width="20" height="20" viewBox="0 0 20 20">
+                        <path
+                            fill="#4285F4"
+                            d="M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z"
+                        />
+                        <path
+                            fill="#34A853"
+                            d="M13.46 15.13c-.83.59-1.96 1-3.46 1-2.64 0-4.88-1.74-5.68-4.15H1.07v2.52C2.72 17.75 6.09 20 10 20c2.7 0 4.96-.89 6.62-2.42l-3.16-2.45z"
+                        />
+                        <path
+                            fill="#FBBC05"
+                            d="M3.99 10c0-.69.12-1.35.32-1.97V5.51H1.07A9.973 9.973 0 0 0 0 10c0 1.61.39 3.14 1.07 4.49l3.24-2.52c-.2-.62-.32-1.28-.32-1.97z"
+                        />
+                        <path
+                            fill="#EA4335"
+                            d="M10 3.88c1.88 0 3.13.81 3.85 1.48l2.84-2.76C14.96.99 12.7 0 10 0 6.09 0 2.72 2.25 1.07 5.51l3.24 2.52C5.12 5.62 7.36 3.88 10 3.88z"
+                        />
+                    </svg>
+                    Sign in with Google
+                </button>
+            </div>
+        </div>
 
-                <div class="toolbar-divider" aria-hidden="true"></div>
+        <!-- Main App -->
+        <div class="app-container" id="appContainer">
+            <!-- Office Picker Overlay (increment 2 — multi-office) -->
+            <div
+                class="office-picker-overlay"
+                id="officePickerOverlay"
+                style="display: none"
+            >
+                <div class="office-picker-card">
+                    <button
+                        type="button"
+                        id="officePickerClose"
+                        class="office-picker-close"
+                        onclick="hideOfficePicker()"
+                        title="Close"
+                        style="display: none"
+                    >
+                        &times;
+                    </button>
+                    <div class="office-picker-logo">🏢</div>
+                    <h2 class="office-picker-title">Select your office</h2>
+                    <p class="office-picker-sub">
+                        Choose where you're located. We'll remember it for next
+                        time.
+                    </p>
+                    <div class="office-picker-list" id="officePickerList"></div>
+                </div>
+            </div>
 
-                <div class="toolbar-group toolbar-actions">
-                    <button class="toolbar-btn toolbar-btn--bulk"
+            <header class="header">
+                <div class="header-brand">
+                    <svg
+                        class="header-logo"
+                        width="28"
+                        height="28"
+                        viewBox="0 0 32 32"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                    >
+                        <rect
+                            width="32"
+                            height="32"
+                            rx="8"
+                            fill="rgba(255,255,255,0.2)"
+                        />
+                        <circle
+                            cx="10"
+                            cy="11"
+                            r="3"
+                            fill="rgba(255,255,255,0.55)"
+                        />
+                        <circle
+                            cx="22"
+                            cy="11"
+                            r="3"
+                            fill="rgba(255,255,255,0.55)"
+                        />
+                        <circle
+                            cx="10"
+                            cy="21"
+                            r="3"
+                            fill="rgba(255,255,255,0.55)"
+                        />
+                        <path
+                            d="M17 21l3 3 5-6"
+                            stroke="white"
+                            stroke-width="2.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
+                    <span class="header-title">Workstation Checkup</span>
+                </div>
+                <div class="user-info">
+                    <span
+                        id="officeIndicator"
+                        class="office-indicator"
+                        style="display: none"
+                    ></span>
+                    <button
+                        id="officeSwitchBtn"
+                        class="office-switch-btn"
+                        onclick="switchOffice()"
+                        style="display: none"
+                        title="Switch office"
+                    >
+                        &#8646; Switch
+                    </button>
+                    <img id="userPhoto" src="" alt="User avatar" />
+                    <span id="userName" class="user-name"></span>
+                    <button class="logout-btn" onclick="logout()">
+                        Logout
+                    </button>
+                </div>
+            </header>
+
+            <!-- Tabs: Floor Inspection | Dashboard | History -->
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('inspect')">
+                    &#128269; Floor Inspection
+                </div>
+                <div class="tab" onclick="switchTab('dashboard')">
+                    &#128202; Dashboard
+                </div>
+                <div class="tab" onclick="switchTab('history')">
+                    &#128203; History
+                </div>
+            </div>
+
+            <!-- ── Floor Inspection Tab ── -->
+            <div class="tab-content active" id="inspectTab">
+                <div class="map-toolbar" id="mapToolbar">
+                    <div class="toolbar-group toolbar-selectors">
+                        <div class="toolbar-select-wrap">
+                            <label class="toolbar-label" for="buildingSelect"
+                                >Building</label
+                            >
+                            <select
+                                id="buildingSelect"
+                                class="toolbar-select"
+                                onchange="onBuildingChange()"
+                            >
+                                <option value="">Select&hellip;</option>
+                            </select>
+                        </div>
+                        <div class="toolbar-select-wrap">
+                            <label class="toolbar-label" for="floorSelect"
+                                >Floor</label
+                            >
+                            <select
+                                id="floorSelect"
+                                class="toolbar-select"
+                                onchange="onFloorChange()"
+                            >
+                                <option value="">Select&hellip;</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="toolbar-divider" aria-hidden="true"></div>
+
+                    <div class="toolbar-group toolbar-actions">
+                        <button
+                            class="toolbar-btn toolbar-btn--bulk"
                             id="bulkModeBtn"
                             onclick="toggleBulkMode()"
-                            title="Toggle Bulk Edit Mode">
-                        <span class="tbtn-icon">&#9999;&#65039;</span>
-                        <span class="tbtn-label">Bulk Edit</span>
-                    </button>
-                    <button class="toolbar-btn toolbar-btn--save"
+                            title="Toggle Bulk Edit Mode"
+                        >
+                            <span class="tbtn-icon">&#9999;&#65039;</span>
+                            <span class="tbtn-label">Bulk Edit</span>
+                        </button>
+                        <button
+                            class="toolbar-btn toolbar-btn--save"
                             onclick="saveAll()"
-                            title="Save All Changes">
-                        <span class="tbtn-icon">&#128190;</span>
-                        <span class="tbtn-label">Save</span>
-                    </button>
-                    <button class="toolbar-btn toolbar-btn--stats"
+                            title="Save All Changes"
+                        >
+                            <span class="tbtn-icon">&#128190;</span>
+                            <span class="tbtn-label">Save</span>
+                        </button>
+                        <button
+                            class="toolbar-btn toolbar-btn--stats"
                             id="statsToggleBtn"
                             onclick="toggleStatsPanel()"
                             title="Show / hide stats"
                             aria-expanded="false"
-                            aria-controls="statsPanel">
-                        <span class="tbtn-icon">&#128202;</span>
-                        <span class="tbtn-label">Stats</span>
+                            aria-controls="statsPanel"
+                        >
+                            <span class="tbtn-icon">&#128202;</span>
+                            <span class="tbtn-label">Stats</span>
+                        </button>
+                        <button
+                            class="toolbar-btn"
+                            onclick="openBulkJiraModal()"
+                            title="Create Jira tickets for items with issues"
+                        >
+                            <span class="tbtn-icon">J</span>
+                            <span class="tbtn-label">Jira</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bulk-actions" id="bulkActionsBar">
+                    <div class="bulk-info">
+                        <span id="selectedCount">0</span> selected
+                    </div>
+                    <button onclick="markSelectedAs('inspected')">
+                        &#9989; Mark Inspected
                     </button>
-                    <button class="toolbar-btn"
-        onclick="openBulkJiraModal()"
-        title="Create Jira tickets for items with issues">
-    <span class="tbtn-icon">J</span>
-    <span class="tbtn-label">Jira</span>
-</button>
+                    <button onclick="markSelectedAs('issue')">
+                        &#10060; Mark Issue
+                    </button>
+                    <button onclick="openBulkEditModal()">
+                        &#9881;&#65039; Edit Details
+                    </button>
+                    <button onclick="clearSelection()">&#10005; Clear</button>
+                </div>
 
+                <div class="stats-panel" id="statsPanel" aria-hidden="true">
+                    <div class="stats">
+                        <div
+                            class="stat-card-main"
+                            data-type="Desk"
+                            onclick="filterByType('Desk')"
+                        >
+                            <div class="stat-main-value" id="deskTotal">0</div>
+                            <div class="stat-main-label">DESKS</div>
+                            <div class="stat-sub-row">
+                                <div class="stat-card-sub">
+                                    <div class="stat-sub-value" id="deskIssues">
+                                        0
+                                    </div>
+                                    <div class="stat-sub-label">Issues</div>
+                                </div>
+                                <div class="stat-card-sub">
+                                    <div
+                                        class="stat-sub-value"
+                                        id="deskProgress"
+                                    >
+                                        0%
+                                    </div>
+                                    <div class="stat-sub-label">Progress</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="stat-card-main"
+                            data-type="MeetingRoom"
+                            onclick="filterByType('MeetingRoom')"
+                        >
+                            <div class="stat-main-value" id="meetingTotal">
+                                0
+                            </div>
+                            <div class="stat-main-label">MEETING ROOMS</div>
+                            <div class="stat-sub-row">
+                                <div class="stat-card-sub">
+                                    <div
+                                        class="stat-sub-value"
+                                        id="meetingIssues"
+                                    >
+                                        0
+                                    </div>
+                                    <div class="stat-sub-label">Issues</div>
+                                </div>
+                                <div class="stat-card-sub">
+                                    <div
+                                        class="stat-sub-value"
+                                        id="meetingProgress"
+                                    >
+                                        0%
+                                    </div>
+                                    <div class="stat-sub-label">Progress</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="stat-card-main"
+                            data-type="ServerRoom"
+                            onclick="filterByType('ServerRoom')"
+                        >
+                            <div class="stat-main-value" id="serverTotal">
+                                0
+                            </div>
+                            <div class="stat-main-label">SERVER ROOMS</div>
+                            <div class="stat-sub-row">
+                                <div class="stat-card-sub">
+                                    <div
+                                        class="stat-sub-value"
+                                        id="serverIssues"
+                                    >
+                                        0
+                                    </div>
+                                    <div class="stat-sub-label">Issues</div>
+                                </div>
+                                <div class="stat-card-sub">
+                                    <div
+                                        class="stat-sub-value"
+                                        id="serverProgress"
+                                    >
+                                        0%
+                                    </div>
+                                    <div class="stat-sub-label">Progress</div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Printer stats -->
+                        <div
+                            class="stat-card-main"
+                            data-type="Printer"
+                            onclick="filterByType('Printer')"
+                        >
+                            <div class="stat-main-value" id="printerTotal">
+                                0
+                            </div>
+                            <div class="stat-main-label">PRINTERS</div>
+                            <div class="stat-sub-row">
+                                <div class="stat-card-sub">
+                                    <div
+                                        class="stat-sub-value"
+                                        id="printerIssues"
+                                    >
+                                        0
+                                    </div>
+                                    <div class="stat-sub-label">Issues</div>
+                                </div>
+                                <div class="stat-card-sub">
+                                    <div
+                                        class="stat-sub-value"
+                                        id="printerProgress"
+                                    >
+                                        0%
+                                    </div>
+                                    <div class="stat-sub-label">Progress</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card-completion">
+                            <div class="stat-main-value" id="completionRate">
+                                0%
+                            </div>
+                            <div class="stat-main-label">COMPLETION</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="floor-container">
+                    <div class="loading" id="floorLoading">
+                        Select a building and floor to begin
+                    </div>
+                    <div class="floor-viewer" id="floorViewer">
+                        <div class="floor-plan" id="floorPlan"></div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button
+                            class="zoom-btn"
+                            onclick="zoomIn()"
+                            title="Zoom In"
+                        >
+                            +
+                        </button>
+                        <button
+                            class="zoom-btn"
+                            onclick="zoomOut()"
+                            title="Zoom Out"
+                        >
+                            &minus;
+                        </button>
+                        <button
+                            class="zoom-btn"
+                            onclick="zoomReset()"
+                            title="Fit to Screen"
+                        >
+                            &#8862;
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="bulk-actions" id="bulkActionsBar">
-                <div class="bulk-info">
-                    <span id="selectedCount">0</span> selected
-                </div>
-                <button onclick="markSelectedAs('inspected')">&#9989; Mark Inspected</button>
-                <button onclick="markSelectedAs('issue')">&#10060; Mark Issue</button>
-                <button onclick="openBulkEditModal()">&#9881;&#65039; Edit Details</button>
-                <button onclick="clearSelection()">&#10005; Clear</button>
-            </div>
+            <!-- ── Dashboard Tab ── -->
+            <div class="tab-content" id="dashboardTab">
+                <div class="dashboard">
+                    <h2>&#128202; Inspection Dashboard</h2>
+                    <div class="dashboard-grid">
+                        <div
+                            class="dashboard-card dashboard-card--clickable"
+                            onclick="openDrillDown('all')"
+                            title="Click to see all items"
+                        >
+                            <div class="metric">
+                                <div class="metric-value" id="dashTotalDesks">
+                                    0
+                                </div>
+                                <div class="metric-label">Total Items</div>
+                            </div>
+                        </div>
+                        <div
+                            class="dashboard-card dashboard-card--clickable"
+                            onclick="openDrillDown('inspected')"
+                            title="Click to see inspected desks"
+                        >
+                            <div class="metric">
+                                <div class="metric-value" id="dashInspected">
+                                    0
+                                </div>
+                                <div class="metric-label">Inspected</div>
+                            </div>
+                        </div>
+                        <div
+                            class="dashboard-card dashboard-card--clickable"
+                            onclick="openDrillDown('issue')"
+                            title="Click to see issue desks"
+                        >
+                            <div class="metric">
+                                <div class="metric-value" id="dashIssues">
+                                    0
+                                </div>
+                                <div class="metric-label">Issues</div>
+                            </div>
+                        </div>
+                        <div
+                            class="dashboard-card dashboard-card--clickable"
+                            onclick="openDrillDown('inspected')"
+                            title="Click to see inspected desks"
+                        >
+                            <div class="metric">
+                                <div class="metric-value" id="dashCompletion">
+                                    0%
+                                </div>
+                                <div class="metric-label">Completion</div>
+                            </div>
+                        </div>
+                    </div>
 
-            <div class="stats-panel" id="statsPanel" aria-hidden="true">
-                <div class="stats">
-                    <div class="stat-card-main" data-type="Desk" onclick="filterByType('Desk')">
-                        <div class="stat-main-value" id="deskTotal">0</div>
-                        <div class="stat-main-label">DESKS</div>
-                        <div class="stat-sub-row">
-                            <div class="stat-card-sub">
-                                <div class="stat-sub-value" id="deskIssues">0</div>
-                                <div class="stat-sub-label">Issues</div>
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <h3>&#128200; Progress by Building</h3>
+                            <div class="chart-container">
+                                <canvas id="buildingChart"></canvas>
                             </div>
-                            <div class="stat-card-sub">
-                                <div class="stat-sub-value" id="deskProgress">0%</div>
-                                <div class="stat-sub-label">Progress</div>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3>&#128202; Status Distribution</h3>
+                            <div class="chart-container">
+                                <canvas id="statusChart"></canvas>
                             </div>
                         </div>
                     </div>
-                    <div class="stat-card-main" data-type="MeetingRoom" onclick="filterByType('MeetingRoom')">
-                        <div class="stat-main-value" id="meetingTotal">0</div>
-                        <div class="stat-main-label">MEETING ROOMS</div>
-                        <div class="stat-sub-row">
-                            <div class="stat-card-sub">
-                                <div class="stat-sub-value" id="meetingIssues">0</div>
-                                <div class="stat-sub-label">Issues</div>
-                            </div>
-                            <div class="stat-card-sub">
-                                <div class="stat-sub-value" id="meetingProgress">0%</div>
-                                <div class="stat-sub-label">Progress</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stat-card-main" data-type="ServerRoom" onclick="filterByType('ServerRoom')">
-                        <div class="stat-main-value" id="serverTotal">0</div>
-                        <div class="stat-main-label">SERVER ROOMS</div>
-                        <div class="stat-sub-row">
-                            <div class="stat-card-sub">
-                                <div class="stat-sub-value" id="serverIssues">0</div>
-                                <div class="stat-sub-label">Issues</div>
-                            </div>
-                            <div class="stat-card-sub">
-                                <div class="stat-sub-value" id="serverProgress">0%</div>
-                                <div class="stat-sub-label">Progress</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stat-card-completion">
-                        <div class="stat-main-value" id="completionRate">0%</div>
-                        <div class="stat-main-label">COMPLETION</div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="floor-container">
-                <div class="loading" id="floorLoading">Select a building and floor to begin</div>
-                <div class="floor-viewer" id="floorViewer">
-                    <div class="floor-plan" id="floorPlan"></div>
-                </div>
-                <div class="zoom-controls">
-                    <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
-                    <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">&minus;</button>
-                    <button class="zoom-btn" onclick="zoomReset()" title="Fit to Screen">&#8862;</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Dashboard Tab ── -->
-        <div class="tab-content" id="dashboardTab">
-            <div class="dashboard">
-                <h2>&#128202; Inspection Dashboard</h2>
-                <div class="dashboard-grid">
-                    <div class="dashboard-card dashboard-card--clickable" onclick="openDrillDown('all')" title="Click to see all desks">
-                        <div class="metric">
-                            <div class="metric-value" id="dashTotalDesks">0</div>
-                            <div class="metric-label">Total Desks</div>
-                        </div>
-                    </div>
-                    <div class="dashboard-card dashboard-card--clickable" onclick="openDrillDown('inspected')" title="Click to see inspected desks">
-                        <div class="metric">
-                            <div class="metric-value" id="dashInspected">0</div>
-                            <div class="metric-label">Inspected</div>
-                        </div>
-                    </div>
-                    <div class="dashboard-card dashboard-card--clickable" onclick="openDrillDown('issue')" title="Click to see issue desks">
-                        <div class="metric">
-                            <div class="metric-value" id="dashIssues">0</div>
-                            <div class="metric-label">Issues</div>
-                        </div>
-                    </div>
-                    <div class="dashboard-card dashboard-card--clickable" onclick="openDrillDown('inspected')" title="Click to see inspected desks">
-                        <div class="metric">
-                            <div class="metric-value" id="dashCompletion">0%</div>
-                            <div class="metric-label">Completion</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dashboard-grid">
                     <div class="dashboard-card">
-                        <h3>&#128200; Progress by Building</h3>
-                        <div class="chart-container">
-                            <canvas id="buildingChart"></canvas>
-                        </div>
+                        <h3>&#128295; Equipment Analysis</h3>
+                        <div class="equipment-grid" id="equipmentGrid"></div>
                     </div>
+
                     <div class="dashboard-card">
-                        <h3>&#128202; Status Distribution</h3>
-                        <div class="chart-container">
-                            <canvas id="statusChart"></canvas>
-                        </div>
+                        <h3>&#128269; Missing Items</h3>
+                        <p class="missing-subtitle">
+                            Visited desks with missing equipment &mdash; click
+                            any card to see which desks
+                        </p>
+                        <div
+                            class="missing-items-grid"
+                            id="missingItemsGrid"
+                        ></div>
                     </div>
-                </div>
-
-                <div class="dashboard-card">
-                    <h3>&#128295; Equipment Analysis</h3>
-                    <div class="equipment-grid" id="equipmentGrid"></div>
-                </div>
-
-                <div class="dashboard-card">
-                    <h3>&#128269; Missing Items</h3>
-                    <p class="missing-subtitle">Visited desks with missing equipment &mdash; click any card to see which desks</p>
-                    <div class="missing-items-grid" id="missingItemsGrid"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- ── History Tab ── -->
-        <div class="tab-content" id="historyTab">
-            <div class="history-container">
+            <!-- ── History Tab ── -->
+            <div class="tab-content" id="historyTab">
+                <div class="history-container">
+                    <div class="history-toolbar">
+                        <h2>&#128203; Inspection History</h2>
+                        <div class="history-filters">
+                            <button
+                                class="history-filter-btn active"
+                                data-days="7"
+                                onclick="loadHistory(7)"
+                            >
+                                Last 7 days
+                            </button>
+                            <button
+                                class="history-filter-btn"
+                                data-days="30"
+                                onclick="loadHistory(30)"
+                            >
+                                Last 30 days
+                            </button>
+                            <button
+                                class="history-filter-btn"
+                                data-days="90"
+                                onclick="loadHistory(90)"
+                            >
+                                Last 90 days
+                            </button>
+                        </div>
+                    </div>
 
-                <div class="history-toolbar">
-                    <h2>&#128203; Inspection History</h2>
-                    <div class="history-filters">
-                        <button class="history-filter-btn active" data-days="7"  onclick="loadHistory(7)">Last 7 days</button>
-                        <button class="history-filter-btn"        data-days="30" onclick="loadHistory(30)">Last 30 days</button>
-                        <button class="history-filter-btn"        data-days="90" onclick="loadHistory(90)">Last 90 days</button>
+                    <div id="historyTableContainer">
+                        <p class="history-empty">
+                            Select a time period to load history.
+                        </p>
+                    </div>
+
+                    <div class="history-pagination">
+                        <button
+                            class="history-load-more"
+                            id="historyLoadMore"
+                            onclick="loadMoreHistory()"
+                            style="display: none"
+                        >
+                            Load more &darr;
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Floating toggle button -->
+            <button
+                class="chat-toggle-btn"
+                id="chatToggleBtn"
+                onclick="toggleChat()"
+                title="Open Workstation Assistant"
+                aria-label="Open AI assistant"
+            >
+                <span class="chat-btn-icon">&#129302;</span>
+                <span class="chat-btn-label">Assistant</span>
+            </button>
+
+            <!-- Chat panel -->
+            <div
+                class="chat-panel"
+                id="chatPanel"
+                style="display: none"
+                role="dialog"
+                aria-label="Workstation AI Assistant"
+            >
+                <!-- Header -->
+                <div class="chat-header">
+                    <div class="chat-header-info">
+                        <span class="chat-header-icon">&#129302;</span>
+                        <div>
+                            <div class="chat-header-title">
+                                Workstation Assistant
+                            </div>
+                            <div class="chat-header-sub">Powered by Toqan</div>
+                        </div>
+                    </div>
+                    <div class="chat-header-actions">
+                        <button
+                            class="chat-icon-btn"
+                            onclick="clearChat()"
+                            title="New conversation"
+                        >
+                            &#128260;
+                        </button>
+                        <button
+                            class="chat-icon-btn"
+                            onclick="toggleChat()"
+                            title="Close"
+                        >
+                            &#10005;
+                        </button>
                     </div>
                 </div>
 
-                <div id="historyTableContainer">
-                    <p class="history-empty">Select a time period to load history.</p>
+                <!-- Messages -->
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Welcome message injected by clearChat() on load -->
                 </div>
 
-                <div class="history-pagination">
-                    <button class="history-load-more" id="historyLoadMore" onclick="loadMoreHistory()" style="display:none">
-                        Load more &darr;
+                <!-- Loading indicator -->
+                <div
+                    class="chat-loading"
+                    id="chatLoading"
+                    style="display: none"
+                >
+                    <span class="chat-dot"></span>
+                    <span class="chat-dot"></span>
+                    <span class="chat-dot"></span>
+                </div>
+
+                <!-- Input bar -->
+                <div class="chat-input-bar">
+                    <textarea
+                        class="chat-input"
+                        id="chatInput"
+                        placeholder="Ask about your inspection data..."
+                        rows="1"
+                        maxlength="1000"
+                    ></textarea>
+                    <button
+                        class="chat-send-btn"
+                        id="chatSendBtn"
+                        onclick="sendChatMessage()"
+                        title="Send message"
+                    >
+                        &#10148;
+                    </button>
+                </div>
+            </div>
+
+            <!-- Admin Panel -->
+
+            <button
+                id="adminToggleBtn"
+                class="admin-toggle-btn"
+                onclick="toggleAdminPanel()"
+            >
+                ⚙️ Admin Panel
+            </button>
+
+            <div id="adminPanel" class="admin-panel">
+                <div class="admin-panel-header">
+                    <h3>🔒 Admin Panel</h3>
+                    <button
+                        class="admin-close-btn"
+                        onclick="toggleAdminPanel()"
+                    >
+                        ×
                     </button>
                 </div>
 
+                <div class="admin-tabs">
+                    <button
+                        class="admin-tab active"
+                        onclick="switchAdminTab('floors')"
+                    >
+                        Floor Management
+                    </button>
+                    <button class="admin-tab" onclick="switchAdminTab('users')">
+                        User Management
+                    </button>
+                    <button
+                        class="admin-tab"
+                        id="adminTabOfficesBtn"
+                        onclick="switchAdminTab('offices')"
+                        style="display: none"
+                    >
+                        Office Management
+                    </button>
+                </div>
+
+                <div class="admin-panel-content">
+                    <!-- Floor Management Tab -->
+                    <div id="adminTabFloors" class="admin-tab-panel active">
+                        <button
+                            class="admin-btn"
+                            onclick="openAddFloorModal()"
+                            style="
+                                background: #7c3aed;
+                                color: #fff;
+                                width: 100%;
+                            "
+                        >
+                            ➕ Add Floor
+                        </button>
+                        <hr
+                            style="
+                                border: none;
+                                border-top: 1px solid #e5e7eb;
+                                margin: 12px 0;
+                            "
+                        />
+                        <button
+                            id="editModeBtn"
+                            class="admin-btn"
+                            onclick="toggleEditMode()"
+                        >
+                            🔒 Enable Edit Mode
+                        </button>
+                        <button class="admin-btn" onclick="startAddMarker()">
+                            ➕ Add Marker
+                        </button>
+                        <button
+                            id="dragModeBtn"
+                            class="admin-btn"
+                            onclick="toggleDragMode()"
+                        >
+                            🖐️ Drag Markers
+                        </button>
+                        <button class="admin-btn" onclick="exportFloorsData()">
+                            💾 Export JSON
+                        </button>
+                        <button class="admin-btn" onclick="importFloorsData()">
+                            📥 Import JSON
+                        </button>
+                        <input
+                            type="file"
+                            id="importFileInput"
+                            style="display: none"
+                            accept=".json"
+                        />
+                        <hr
+                            style="
+                                border: none;
+                                border-top: 1px solid #e5e7eb;
+                                margin: 12px 0;
+                            "
+                        />
+                        <button
+                            class="admin-btn"
+                            onclick="resetAllToPending()"
+                            style="
+                                background: #dc2626;
+                                color: #fff;
+                                width: 100%;
+                                margin-top: 4px;
+                            "
+                        >
+                            ⚠️ Reset All to Pending
+                        </button>
+                    </div>
+
+                    <!-- User Management Tab -->
+                    <div id="adminTabUsers" class="admin-tab-panel">
+                        <ul id="userList" class="user-list">
+                            <li
+                                style="
+                                    text-align: center;
+                                    color: #999;
+                                    padding: 20px;
+                                "
+                            >
+                                Loading users...
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Office Management Tab (superadmin only) -->
+                    <div id="adminTabOffices" class="admin-tab-panel">
+                        <p class="office-admin-hint">
+                            Offices staff can select. Superadmin only.
+                        </p>
+                        <ul id="officeAdminList" class="office-admin-list"></ul>
+                        <hr
+                            style="
+                                border: none;
+                                border-top: 1px solid #e5e7eb;
+                                margin: 12px 0;
+                            "
+                        />
+                        <div class="office-add-form">
+                            <input
+                                type="text"
+                                id="officeAddCode"
+                                class="office-add-input"
+                                placeholder="Code (e.g. MIL)"
+                                maxlength="5"
+                                autocomplete="off"
+                            />
+                            <input
+                                type="text"
+                                id="officeAddName"
+                                class="office-add-input"
+                                placeholder="Display name (e.g. Milan)"
+                                maxlength="40"
+                                autocomplete="off"
+                            />
+                            <p
+                                id="officeAddStatus"
+                                class="office-add-status"
+                            ></p>
+                            <button
+                                class="admin-btn"
+                                onclick="createOffice()"
+                                style="width: 100%"
+                            >
+                                ➕ Add Office
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Add Marker Modal -->
+            <div id="addMarkerModal" class="admin-modal">
+                <div class="admin-modal-content">
+                    <h3 style="margin-bottom: 20px; font-size: 20px">
+                        Add New Marker
+                    </h3>
+
+                    <div class="admin-form-group">
+                        <label>Marker Type</label>
+                        <select id="markerType">
+                            <option value="Desk">Desk</option>
+                            <option value="MeetingRoom">Meeting Room</option>
+                            <option value="ServerRoom">Server Room</option>
+                            <option value="Printer">Printer</option>
+                        </select>
+                    </div>
+
+                    <div class="admin-form-group">
+                        <label>Marker Name</label>
+                        <input
+                            type="text"
+                            id="markerName"
+                            placeholder="e.g., Moussaka, BERE_3_01"
+                        />
+                    </div>
+
+                    <div class="admin-form-actions">
+                        <button class="admin-btn" onclick="confirmAddMarker()">
+                            Next: Click on Map
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Floor Modal (increment 4 — multi-office) -->
+            <div id="addFloorModal" class="admin-modal">
+                <div class="admin-modal-content">
+                    <h3 style="margin-bottom: 20px; font-size: 20px">
+                        Add Floor to
+                        <span id="addFloorOfficeName">this office</span>
+                    </h3>
+                    <div class="admin-form-group">
+                        <label>Building</label>
+                        <input
+                            type="text"
+                            id="floorBuilding"
+                            placeholder="e.g. Milan, or A"
+                        />
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Floor number</label>
+                        <input
+                            type="number"
+                            id="floorNumber"
+                            placeholder="e.g. 0"
+                        />
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Floor-plan image (PNG)</label>
+                        <input
+                            type="file"
+                            id="floorImageFile"
+                            accept="image/*"
+                            onchange="onFloorImagePick()"
+                        />
+                        <p
+                            id="floorAddStatus"
+                            style="
+                                margin: 6px 0 0;
+                                font-size: 13px;
+                                min-height: 16px;
+                                color: #b91c1c;
+                            "
+                        ></p>
+                    </div>
+                    <div
+                        id="floorAddResult"
+                        style="
+                            display: none;
+                            margin-top: 8px;
+                            padding: 10px 12px;
+                            background: #f5f3ff;
+                            border: 1px solid #ddd6fe;
+                            border-radius: 8px;
+                            font-size: 12.5px;
+                            color: #4c1d95;
+                            line-height: 1.5;
+                            white-space: pre-wrap;
+                        "
+                    ></div>
+                    <div class="admin-form-actions">
+                        <button
+                            class="admin-btn"
+                            onclick="closeAddFloorModal()"
+                        >
+                            Cancel
+                        </button>
+                        <button class="admin-btn" onclick="createFloor()">
+                            Create Floor
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /app-container -->
+
+        <!-- ── Drill-Down Modal ── -->
+        <div class="modal" id="drillDownModal" style="display: none">
+            <div class="modal-content modal-content--wide">
+                <div class="modal-header">
+                    <h2 id="drillDownTitle">Desks</h2>
+                    <button class="close-btn" onclick="closeDrillDown()">
+                        &times;
+                    </button>
+                </div>
+                <div
+                    class="modal-body modal-body--scroll"
+                    id="drillDownBody"
+                ></div>
             </div>
         </div>
 
-<!-- Floating toggle button -->
-<button class="chat-toggle-btn" id="chatToggleBtn" onclick="toggleChat()"
-        title="Open Workstation Assistant" aria-label="Open AI assistant">
-    <span class="chat-btn-icon">&#129302;</span>
-    <span class="chat-btn-label">Assistant</span>
-</button>
-
-<!-- Chat panel -->
-<div class="chat-panel" id="chatPanel" style="display:none;" role="dialog"
-     aria-label="Workstation AI Assistant">
-
-    <!-- Header -->
-    <div class="chat-header">
-        <div class="chat-header-info">
-            <span class="chat-header-icon">&#129302;</span>
-            <div>
-                <div class="chat-header-title">Workstation Assistant</div>
-                <div class="chat-header-sub">Powered by Toqan</div>
+        <!-- ── Desk Details Modal ── -->
+        <div class="modal" id="deskModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Desk Details</h2>
+                    <button class="close-btn" onclick="closeModal()">
+                        &times;
+                    </button>
+                </div>
+                <div class="modal-body" id="modalBody"></div>
+                <div class="modal-footer">
+                    <button class="secondary" onclick="closeModal()">
+                        Cancel
+                    </button>
+                    <button
+                        id="modalJiraBtn"
+                        style="
+                            background: #0052cc;
+                            color: #fff;
+                            border: none;
+                            padding: 8px 16px;
+                            border-radius: 6px;
+                            font-size: 13px;
+                            font-weight: 600;
+                            cursor: pointer;
+                        "
+                    >
+                        🎫 Create Jira Ticket
+                    </button>
+                    <button class="primary" onclick="saveInspectionData()">
+                        Save Changes
+                    </button>
+                </div>
             </div>
         </div>
-        <div class="chat-header-actions">
-            <button class="chat-icon-btn" onclick="clearChat()" title="New conversation">&#128260;</button>
-            <button class="chat-icon-btn" onclick="toggleChat()" title="Close">&#10005;</button>
-        </div>
-    </div>
 
-    <!-- Messages -->
-    <div class="chat-messages" id="chatMessages">
-        <!-- Welcome message injected by clearChat() on load -->
-    </div>
-
-    <!-- Loading indicator -->
-    <div class="chat-loading" id="chatLoading" style="display:none;">
-        <span class="chat-dot"></span>
-        <span class="chat-dot"></span>
-        <span class="chat-dot"></span>
-    </div>
-
-    <!-- Input bar -->
-    <div class="chat-input-bar">
-        <textarea class="chat-input" id="chatInput"
-            placeholder="Ask about your inspection data..."
-            rows="1" maxlength="1000"></textarea>
-        <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()"
-                title="Send message">&#10148;</button>
-    </div>
-</div>
-
-
-<!-- Admin Panel -->
-
-
-<button id="adminToggleBtn" class="admin-toggle-btn" onclick="toggleAdminPanel()">⚙️ Admin Panel</button>
-
-
-
-<div id="adminPanel" class="admin-panel">
-    <div class="admin-panel-header">
-        <h3>🔒 Admin Panel</h3>
-        <button class="admin-close-btn" onclick="toggleAdminPanel()">×</button>
-    </div>
-    
-    <div class="admin-tabs">
-        <button class="admin-tab active" onclick="switchAdminTab('floors')">Floor Management</button>
-        <button class="admin-tab" onclick="switchAdminTab('users')">User Management</button>
-    </div>
-    
-    <div class="admin-panel-content">
-        
-        <!-- Floor Management Tab -->
-        <div id="adminTabFloors" class="admin-tab-panel active">
-            <button id="editModeBtn" class="admin-btn" onclick="toggleEditMode()">🔒 Enable Edit Mode</button>
-            <button class="admin-btn" onclick="startAddMarker()">➕ Add Marker</button>
-            <button id="dragModeBtn" class="admin-btn" onclick="toggleDragMode()">🖐️ Drag Markers</button>
-            <button class="admin-btn" onclick="exportFloorsData()">💾 Export JSON</button>
-            <button class="admin-btn" onclick="importFloorsData()">📥 Import JSON</button>
-            <input type="file" id="importFileInput" style="display:none" accept=".json">
-            <hr style="border:none; border-top:1px solid #e5e7eb; margin:12px 0;">
-<button class="admin-btn"
-        onclick="resetAllToPending()"
-        style="background:#dc2626; color:#fff; width:100%; margin-top:4px;">
-    ⚠️ Reset All to Pending
-</button>
-            
-
-
-        </div>
-        
-        <!-- User Management Tab -->
-        <div id="adminTabUsers" class="admin-tab-panel">
-            <ul id="userList" class="user-list">
-                <li style="text-align:center; color:#999; padding:20px;">Loading users...</li>
-            </ul>
-        </div>
-    </div>
-</div>
-<!-- Add Marker Modal -->
-<div id="addMarkerModal" class="admin-modal">
-    <div class="admin-modal-content">
-        <h3 style="margin-bottom: 20px; font-size: 20px;">Add New Marker</h3>
-        
-        <div class="admin-form-group">
-            <label>Marker Type</label>
-            <select id="markerType">
-                <option value="Desk">Desk</option>
-                <option value="MeetingRoom">Meeting Room</option>
-                <option value="ServerRoom">Server Room</option>
-            </select>
-        </div>
-        
-        <div class="admin-form-group">
-            <label>Marker Name</label>
-            <input type="text" id="markerName" placeholder="e.g., Moussaka, BERE_3_01">
-        </div>
-        
-        <div class="admin-form-actions">
-            <button class="admin-btn" onclick="cancelAddMarker()">Cancel</button>
-            <button class="admin-btn" onclick="confirmAddMarker()">Next: Click on Map</button>
-        </div>
-    </div>
-</div>
-
-
-
-
-    </div><!-- /app-container -->
-
-    <!-- ── Drill-Down Modal ── -->
-    <div class="modal" id="drillDownModal" style="display:none;">
-        <div class="modal-content modal-content--wide">
-            <div class="modal-header">
-                <h2 id="drillDownTitle">Desks</h2>
-                <button class="close-btn" onclick="closeDrillDown()">&times;</button>
-            </div>
-            <div class="modal-body modal-body--scroll" id="drillDownBody"></div>
-        </div>
-    </div>
-
-    <!-- ── Desk Details Modal ── -->
-    <div class="modal" id="deskModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle">Desk Details</h2>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
-            </div>
-            <div class="modal-body" id="modalBody"></div>
-            <div class="modal-footer">
-                <button class="secondary" onclick="closeModal()">Cancel</button>
-                <button id="modalJiraBtn"
-                        style="background:#0052cc; color:#fff; border:none;
-                               padding:8px 16px; border-radius:6px; font-size:13px;
-                               font-weight:600; cursor:pointer;">
-                    🎫 Create Jira Ticket
-                </button>
-                <button class="primary" onclick="saveInspectionData()">Save Changes</button>
+        <!-- ── Per-Desk Timeline Modal ── -->
+        <div class="modal" id="timelineModal" style="display: none">
+            <div class="modal-content modal-content--wide">
+                <div class="modal-header">
+                    <h2 id="timelineTitle">Desk History</h2>
+                    <button class="close-btn" onclick="closeTimeline()">
+                        &times;
+                    </button>
+                </div>
+                <div
+                    class="modal-body modal-body--scroll"
+                    id="timelineBody"
+                ></div>
             </div>
         </div>
-    </div>
 
-    <!-- ── Per-Desk Timeline Modal ── -->
-    <div class="modal" id="timelineModal" style="display:none;">
-        <div class="modal-content modal-content--wide">
-            <div class="modal-header">
-                <h2 id="timelineTitle">Desk History</h2>
-                <button class="close-btn" onclick="closeTimeline()">&times;</button>
+        <script>
+            function toggleStatsPanel() {
+                var panel = document.getElementById("statsPanel");
+                var btn = document.getElementById("statsToggleBtn");
+                if (!panel || !btn) return;
+                var isOpen = panel.classList.toggle("stats-panel--open");
+                btn.classList.toggle("toolbar-btn--active", isOpen);
+                btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                panel.setAttribute("aria-hidden", isOpen ? "false" : "true");
+            }
+        </script>
+
+        <!-- Jira Single Ticket Modal -->
+        <div
+            class="jira-modal-overlay"
+            id="jiraSingleModal"
+            style="display: none"
+            onclick="if (event.target === this) closeJiraSingleModal();"
+        >
+            <div class="jira-modal">
+                <h3 id="jiraSingleTitle">Create Jira Ticket</h3>
+                <div>
+                    <label>Summary</label>
+                    <input
+                        type="text"
+                        id="jiraSingleSummary"
+                        placeholder="Ticket summary"
+                    />
+                </div>
+                <div>
+                    <label>Parent Story</label>
+                    <input
+                        type="text"
+                        id="jiraSingleParent"
+                        placeholder="e.g. EITOPSGLOB-12325"
+                    />
+                </div>
+                <div>
+                    <label
+                        >Comment
+                        <span style="font-weight: 400; color: #9ca3af"
+                            >(optional)</span
+                        ></label
+                    >
+                    <textarea
+                        id="jiraSingleComment"
+                        placeholder="Any additional context for this ticket..."
+                    ></textarea>
+                </div>
+                <p class="jira-status" id="jiraSingleStatus"></p>
+                <div class="jira-modal-footer">
+                    <button
+                        class="jira-btn-secondary"
+                        onclick="closeJiraSingleModal()"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        class="jira-btn-primary"
+                        id="jiraSingleConfirmBtn"
+                        onclick="void 0"
+                    >
+                        Create Ticket
+                    </button>
+                </div>
             </div>
-            <div class="modal-body modal-body--scroll" id="timelineBody"></div>
         </div>
-    </div>
 
-    <script>
-    function toggleStatsPanel() {
-        var panel = document.getElementById('statsPanel');
-        var btn   = document.getElementById('statsToggleBtn');
-        if (!panel || !btn) return;
-        var isOpen = panel.classList.toggle('stats-panel--open');
-        btn.classList.toggle('toolbar-btn--active', isOpen);
-        btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        panel.setAttribute('aria-hidden',  isOpen ? 'false' : 'true');
-    }
-
-
-    </script>
-
-
-
-<!-- Jira Single Ticket Modal -->
-<div class="jira-modal-overlay" id="jiraSingleModal" style="display:none;" onclick="if(event.target===this)closeJiraSingleModal()">
-
-    <div class="jira-modal">
-        <h3 id="jiraSingleTitle">Create Jira Ticket</h3>
-        <div>
-            <label>Summary</label>
-            <input type="text" id="jiraSingleSummary" placeholder="Ticket summary">
+        <!-- Jira Bulk Tickets Modal -->
+        <div
+            class="jira-modal-overlay"
+            id="jiraBulkModal"
+            style="display: none"
+            onclick="if (event.target === this) closeJiraBulkModal();"
+        >
+            <div class="jira-modal">
+                <h3 id="jiraBulkTitle">
+                    Create Jira Tickets —
+                    <span id="jiraBulkCount">0</span> selected
+                </h3>
+                <div>
+                    <label>Parent Story</label>
+                    <input
+                        type="text"
+                        id="jiraBulkParent"
+                        placeholder="e.g. EITOPSGLOB-12325"
+                    />
+                </div>
+                <div class="jira-bulk-list" id="jiraBulkList"></div>
+                <div>
+                    <label
+                        >Comment for all tickets
+                        <span style="font-weight: 400; color: #9ca3af"
+                            >(optional)</span
+                        ></label
+                    >
+                    <textarea
+                        id="jiraBulkComment"
+                        placeholder="Applied to every ticket created in this batch..."
+                    ></textarea>
+                </div>
+                <p class="jira-status" id="jiraBulkStatus"></p>
+                <div class="jira-modal-footer">
+                    <button
+                        class="jira-btn-secondary"
+                        onclick="closeJiraBulkModal()"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        class="jira-btn-primary"
+                        id="jiraBulkConfirmBtn"
+                        onclick="submitBulkJiraTickets()"
+                    >
+                        Create Tickets
+                    </button>
+                </div>
+            </div>
         </div>
-        <div>
-            <label>Parent Story</label>
-            <input type="text" id="jiraSingleParent" placeholder="e.g. EITOPSGLOB-12325">
-        </div>
-        <div>
-            <label>Comment <span style="font-weight:400;color:#9ca3af;">(optional)</span></label>
-            <textarea id="jiraSingleComment" placeholder="Any additional context for this ticket..."></textarea>
-        </div>
-        <p class="jira-status" id="jiraSingleStatus"></p>
-        <div class="jira-modal-footer">
-            <button class="jira-btn-secondary" onclick="closeJiraSingleModal()">Cancel</button>
-            <button class="jira-btn-primary" id="jiraSingleConfirmBtn" onclick="void(0)">Create Ticket</button>
-        </div>
-    </div>
-</div>
-
-<!-- Jira Bulk Tickets Modal -->
-<div class="jira-modal-overlay" id="jiraBulkModal" style="display:none;" onclick="if(event.target===this)closeJiraBulkModal()">
-    <div class="jira-modal">
-        <h3 id="jiraBulkTitle">Create Jira Tickets — <span id="jiraBulkCount">0</span> selected</h3>
-        <div>
-            <label>Parent Story</label>
-            <input type="text" id="jiraBulkParent" placeholder="e.g. EITOPSGLOB-12325">
-        </div>
-        <div class="jira-bulk-list" id="jiraBulkList"></div>
-        <div>
-            <label>Comment for all tickets <span style="font-weight:400;color:#9ca3af;">(optional)</span></label>
-            <textarea id="jiraBulkComment" placeholder="Applied to every ticket created in this batch..."></textarea>
-        </div>
-        <p class="jira-status" id="jiraBulkStatus"></p>
-        <div class="jira-modal-footer">
-            <button class="jira-btn-secondary" onclick="closeJiraBulkModal()">Cancel</button>
-            <button class="jira-btn-primary" id="jiraBulkConfirmBtn" onclick="submitBulkJiraTickets()">Create Tickets</button>
-        </div>
-    </div>
-</div>
-
-
-
-
-
-
-
-
-
-
-</body>
+    </body>
 </html>

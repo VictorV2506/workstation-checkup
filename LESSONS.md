@@ -210,6 +210,46 @@ floor doc has an **`id` FIELD** (floor-selector uses `floor.id` as the option va
 (true for admin AND superadmin); to gate a superadmin-only action, expose the actual role. New floors:
 `const ref = db.collection('floors').doc(); ref.set({ id: ref.id, ... })`. Full increment plan in TODO P1.
 
+**L39 (new) — Full infra/proxy/git/Sonic reality lives in [`INFRA-STATE.md`](INFRA-STATE.md).** Highlights:
+working app = **Firebase Hosting → two personal Deno proxies** (now hardened: `jose` Firebase-ID-token
+verify + CORS `Authorization`). **Two git remotes** — personal `origin` (github.com/VictorV2506) +
+company `company` (github.je-labs.com/**victor-viziri**/workstation-revamp, needs a **PAT**). Toqan uses
+**`x-api-key` + 2-step polling** (NOT Bearer). **`server.js` only affects chat+Jira and is fully isolated
+from the Firebase deploy** (Firebase Hosting is static, calls Deno). Sonic **Launchpad** = two *separate*
+builds (static-nginx `walk-the-store` vs combined-server `server.js`), prototype-tier, NOT the live app.
+Deploy rule we learned the hard way: **backend green + tested FIRST, frontend cutover LAST; don't
+improvise the host out of order.** ⚠️ Rotate the Toqan + Jira keys (Toqan was exposed).
+
+**L40 (new) — Sonic's value is platform scaffolding, not app code; full playbook in
+[`.claude/skills/sonic-deploy`](.claude/skills/sonic-deploy/SKILL.md).** Building the **desk-sos** portal
+and the **workstation-api** proxy (2026-07-20) proved the Sonic path and taught: (a) **scaffold FRESH in
+Launchpad** (it wires CI + Vault + Istio egress) and drop logic in — hand-writing a service and bolting the
+platform on afterward is the 502/egress rabbit hole (`report-portal`). (b) Call external APIs over
+**`https://`** — `http://` + a `tlsOriginationEnabled` ServiceEntry made Atlassian's CloudFront return a
+**307**. (c) **Save ≠ deploy** — env changes need a real redeploy (sleep/wake won't do it); verify the *running*
+config by echoing it in error output. (d) Jira: `project.key`=bare `EITOPSGLOB`, `parent`=issue key
+`EITOPSGLOB-####`, issue type `5`=**sub-task (needs a parent)**, Basic auth needs a **classic** (not scoped)
+token, and `AUTHENTICATED_FAILED`=creds rejected (the "project doesn't exist" body lies). (e) The egress
+ServiceEntry must list every outbound host (`justeattakeaway.atlassian.net`, `api.toqan.ai`, `www.googleapis.com`).
+⚠️ **Launchpad = prototype/ephemeral** (the S28 onboarding wall was the *production Scaffolder*; Launchpad the
+user CAN use). This also resolves the L35 egress unknown: a Sonic service **can** reach Jira/Toqan externally.
+
+**L41 (new) — A Jira proxy that forwards the whole `{action, issueData}` envelope makes Jira lie about the project.**
+If the proxy POSTs the client's entire body (`{action, issueData:{fields}}`) to `/rest/api/3/issue` instead of
+unwrapping and sending `issueData` (`{fields}`), Jira sees no top-level `fields` → `400 {"errors":{"project":
+"Specify a valid project ID or key"}}` — IDENTICAL to the anonymous/creds-rejected error, so it masquerades as an
+auth problem. Probe: POST the raw shape (`{fields:{...}}`, no envelope) — if the error *changes* (e.g. to
+"sub-task needs a parent"), it's a payload-contract bug and auth is actually fine. (workstation-api had this; fixed 2026-07-29.)
+
+**L42 (new) — Toqan's real API is `x-api-key` + 2-step polling; the in-repo proxies are WRONG references.**
+`POST https://api.toqan.ai/api/create_conversation` (or `/continue_conversation`) with header **`x-api-key`**
+(NOT `Authorization: Bearer`) → returns ONLY `{conversation_id, request_id}` (the answer is never inline, no
+matter how fast the model). Then **poll** `GET https://api.toqan.ai/api/get_answer?conversation_id=…&request_id=…`
+(same `x-api-key`) until the body has answer text; strip `<think>…</think>`; return `{conversation_id, message}`.
+⚠️ `proxy/server.js` and `functions/index.js` in this repo use `Bearer` + no polling — they're incomplete/WRONG;
+the correct reference is the live **Deno proxy** and **INFRA-STATE.md L27/L45**. Read INFRA-STATE before trusting
+the in-repo JS. (workstation-api fixed to match, 2026-07-29.)
+
 ---
 
 ## Dropped (previous-agent environment, not applicable here)

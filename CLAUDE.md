@@ -2,7 +2,9 @@
 
 > Master context for any agent working on this repo. Read this first, then
 > **TODO.md** (work queue) and **LESSONS.md** (accumulated gotchas).
-> Last reconciled: **2026-07-02**. If you change architecture, update this file.
+> Last reconciled: **2026-07-08**. If you change architecture, update this file.
+> **Infra / proxy / git / Sonic reality → see [`INFRA-STATE.md`](INFRA-STATE.md)** (live app = Firebase +
+> hardened Deno; two git remotes; Sonic Launchpad still an experiment).
 
 ---
 

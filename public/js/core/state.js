@@ -12,25 +12,29 @@
 // variables (auth.js, data-loader.js, all feature modules).
 
 // ── User & data state ─────────────────────────────────────────
-let currentUser   = null;
+let currentUser = null;
 let isAdmin = false;
-let adminUsers = [];  // Cache of users for admin panel
+let isSuperAdmin = false; // true ONLY for role 'superadmin'; gates office mgmt. Set in auth.js (L38). Real gate = Firestore rules.
+let adminUsers = []; // Cache of users for admin panel
 let isAddingMarker = false;
 let pendingMarker = null;
 let isEditMode = false;
-let floorConfigs  = [];
-let currentFloor  = null;
-let desksData     = {};
+let floorConfigs = [];
+let allFloorConfigs = []; // master: ALL offices' floors (increment 2). floorConfigs = current office's subset.
+let currentFloor = null;
+let currentOffice = null; // selected office { code, displayName }; set by the picker in increment 2. null = not yet chosen.
+let officesList = []; // all docs from the offices collection (increment 2), for the pick
+let desksData = {};
 
 // ── Bulk edit state ───────────────────────────────────────────
 let bulkModeActive = false;
-let selectedDesks  = new Set();
-let isDragging     = false;
-let bulkEditMode   = false;
-let dragStartX     = 0;
-let dragStartY     = 0;
+let selectedDesks = new Set();
+let isDragging = false;
+let bulkEditMode = false;
+let dragStartX = 0;
+let dragStartY = 0;
 let selectionStart = null;
 
 // ── View state ────────────────────────────────────────────────
-let currentFilter  = 'all';
-let currentZoom    = 1;
+let currentFilter = "all";
+let currentZoom = 1;

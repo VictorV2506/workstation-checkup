@@ -154,12 +154,12 @@ async function _callToqanAPI(userText) {
   _chatWaiting = true;
   var endpoint, body;
   if (!_chatConversationId) {
-    endpoint = "https://radiant-woodpecker-65.victorv2506.deno.net/create";
+    endpoint = TOQAN_CREATE_URL;
     body = {
       user_message: _buildContextPrefix() + "\n\nQuestion: " + userText,
     };
   } else {
-    endpoint = "https://radiant-woodpecker-65.victorv2506.deno.net/continue";
+    endpoint = TOQAN_CONTINUE_URL;
     body = { conversation_id: _chatConversationId, user_message: userText };
   }
   const response = await _authedFetch(endpoint, body);
